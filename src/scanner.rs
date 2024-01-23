@@ -1,10 +1,10 @@
 use std::process::exit;
 
-use crate::token::{Token, TokenKind};
+use crate::token::{Token, TokenKind, Value};
 
 pub struct Scanner {
     source: Vec<char>,
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
     start: usize,
     current: usize,
     line: usize,
@@ -21,14 +21,13 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token();
         }
 
         self.tokens.push(Token::eof(self.line));
-        self.tokens.clone()
     }
 
     fn scan_token(&mut self) {
@@ -124,7 +123,7 @@ impl Scanner {
             .collect::<String>()
             .parse()
             .expect("Should be a valid f64");
-        self.add_token(TokenKind::Number { value })
+        self.add_token(TokenKind::Number(Value::Double(value)))
     }
 
     fn consume_string_literal(&mut self) {
@@ -135,19 +134,16 @@ impl Scanner {
             self.consume();
         }
 
-        if self.is_at_end() {
+        if !self.try_consume('"') {
             // TODO: better error handling
             println!("Unterminated String at line {}", self.line);
             exit(1);
         }
 
-        // consume the closing "
-        self.consume();
-
         let value = self.source[(self.start + 1)..(self.current - 1)]
             .iter()
             .collect();
-        self.add_token(TokenKind::String { value })
+        self.add_token(TokenKind::String(Value::Str(value)))
     }
 
     fn consume(&mut self) -> char {

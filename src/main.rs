@@ -5,10 +5,15 @@ use std::{
     process::exit,
 };
 
+mod ast_printer;
+mod expression;
+mod parser;
 mod scanner;
 mod token;
 
-use crate::scanner::Scanner;
+use parser::Parser;
+
+use crate::{ast_printer::ast_print, scanner::Scanner};
 
 pub fn main() {
     let args: Vec<String> = env::args().collect();
@@ -23,7 +28,7 @@ pub fn main() {
     };
 }
 fn run_file(path: &str) {
-    let source = fs::read_to_string(path).expect("Unable to read file");
+    let source = fs::read_to_string(path).expect("should read file");
     run(source);
 }
 
@@ -31,7 +36,7 @@ fn run_prompt() {
     let mut iter = io::stdin().lines();
     loop {
         print!("> ");
-        io::stdout().flush().expect("flush stdout");
+        io::stdout().flush().expect("should flush stdout");
         let Some(Ok(line)) = iter.next() else {
             break;
         };
@@ -41,11 +46,10 @@ fn run_prompt() {
 
 fn run(source: String) {
     let mut scanner = Scanner::new(source);
-    let tokens = scanner.scan_tokens();
-
-    for token in tokens {
-        println!("{token:?}");
-    }
+    scanner.scan_tokens();
+    let mut parser = Parser::new(scanner.tokens);
+    let expression = parser.parse();
+    println!("{}", ast_print(&expression));
 }
 
 // TODO: add error handling
