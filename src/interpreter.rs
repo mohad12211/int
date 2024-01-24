@@ -92,6 +92,28 @@ impl Interpreter {
                 let value = self.evalute(*expression)?;
                 self.assign(*name, value)
             }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left = self.evalute(*left)?;
+                match operator.kind {
+                    TokenKind::And => {
+                        if !left.is_truthy() {
+                            return Ok(left);
+                        }
+                    }
+                    TokenKind::Or => {
+                        if left.is_truthy() {
+                            return Ok(left);
+                        }
+                    }
+                    _ => unreachable!("Invalid logical operator: {operator:?}"),
+                }
+
+                self.evalute(*right)
+            }
         }
     }
 
@@ -112,6 +134,24 @@ impl Interpreter {
                 self.environments.push(HashMap::new());
                 self.interpret(*statements);
                 self.environments.pop();
+                Ok(())
+            }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                if self.evalute(*condition)?.is_truthy() {
+                    self.execute(*then_branch)?;
+                } else if let Some(else_branch) = *else_branch {
+                    self.execute(else_branch)?;
+                }
+                Ok(())
+            }
+            Stmt::While { condition, body } => {
+                while self.evalute(*condition.clone())?.is_truthy() {
+                    self.execute(*body.clone())?;
+                }
                 Ok(())
             }
         }

@@ -1,23 +1,5 @@
 #![allow(non_snake_case)]
-use crate::{token::Token, value::Value};
-
-macro_rules! generate_enum_and_functions {
-    ($enum_name:ident {
-        $( $variant:ident { $( $field:ident : $field_type:ty $(,)? )* } ),* $(,)? }
-    ) => {
-        #[derive(Debug)]
-        pub enum $enum_name {
-            $( $variant { $( $field: Box<$field_type> ),* } ),*
-        }
-            $(
-                pub fn $variant($( $field: $field_type ),*) -> $enum_name {
-                    $enum_name::$variant {
-                    $($field: $field.into()),*
-                }
-                }
-            )*
-    };
-}
+use crate::{generate_enum_and_functions, token::Token, value::Value};
 
 generate_enum_and_functions! {
     Expr {
@@ -35,6 +17,11 @@ generate_enum_and_functions! {
         },
         Literal {
             value: Value,
+        },
+        Logical {
+            left: Expr,
+            operator: Token,
+            right: Expr,
         },
         Variable {
             name: Token,
