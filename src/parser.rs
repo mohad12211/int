@@ -2,9 +2,9 @@ use std::process::exit;
 
 use crate::{
     expression::{Binary, Expr, Grouping, Literal, Unary},
-    token::{Token, TokenKind, Value},
+    token::{Token, TokenKind},
+    value::Value,
 };
-use TokenKind::*;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -41,7 +41,7 @@ impl Parser {
 
     fn equality(&mut self) -> Expr {
         let mut expr = self.comparison();
-        match_token!(self, while operator BangEqual | EqualEqual, {
+        match_token!(self, while operator TokenKind::BangEqual | TokenKind::EqualEqual, {
             let right = self.comparison();
             expr = Binary(expr, operator, right);
         });
@@ -50,7 +50,7 @@ impl Parser {
 
     fn comparison(&mut self) -> Expr {
         let mut expr = self.term();
-        match_token!(self, while operator Greater | GreaterEqual | Less | LessEqual , {
+        match_token!(self, while operator TokenKind::Greater | TokenKind::GreaterEqual | TokenKind::Less | TokenKind::LessEqual , {
             let right = self.term();
             expr = Binary(expr, operator, right);
         });
@@ -59,7 +59,7 @@ impl Parser {
 
     fn term(&mut self) -> Expr {
         let mut expr = self.factor();
-        match_token!(self, while operator Minus | Plus, {
+        match_token!(self, while operator TokenKind::Minus | TokenKind::Plus, {
             let right = self.factor();
             expr = Binary(expr, operator, right);
         });
@@ -68,7 +68,7 @@ impl Parser {
 
     fn factor(&mut self) -> Expr {
         let mut expr = self.unary();
-        match_token!(self, while operator Slash | Star, {
+        match_token!(self, while operator TokenKind::Slash | TokenKind::Star, {
             let right = self.unary();
             expr = Binary(expr, operator, right);
         });
@@ -76,7 +76,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Expr {
-        match_token!(self, if operator Bang | Minus, {
+        match_token!(self, if operator TokenKind::Bang | TokenKind::Minus, {
             let right = self.unary();
             return Unary(operator, right);
         });
@@ -84,21 +84,21 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Expr {
-        match_token!(self, if False, {
+        match_token!(self, if TokenKind::False, {
             return Literal(Value::Bool(false));
         });
-        match_token!(self, if True, {
+        match_token!(self, if TokenKind::True, {
             return Literal(Value::Bool(true));
         });
-        match_token!(self, if Nil, {
+        match_token!(self, if TokenKind::Nil, {
             return Literal(Value::Nil);
         });
-        match_token!(self, if String(val) | Number(val), {
+        match_token!(self, if TokenKind::String(val) | TokenKind::Number(val), {
             return Literal(val.clone());
         });
-        match_token!(self, if token LeftParen, {
+        match_token!(self, if token TokenKind::LeftParen, {
             let expr = self.expression();
-            if !self.consume(RightParen) {
+            if !self.consume(TokenKind::RightParen) {
                 // TODO: better error handling
                 println!("Unmatched delimiter: Expected `)` at line {}", token.line);
                 exit(1);

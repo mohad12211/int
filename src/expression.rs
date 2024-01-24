@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::token::{Token, Value};
+use crate::{token::Token, value::Value};
 
 macro_rules! generate_enum_and_functions {
     ($enum_name:ident {

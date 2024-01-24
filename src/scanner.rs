@@ -1,6 +1,9 @@
 use std::process::exit;
 
-use crate::token::{Token, TokenKind, Value};
+use crate::{
+    token::{Token, TokenKind},
+    value::Value,
+};
 
 pub struct Scanner {
     source: Vec<char>,

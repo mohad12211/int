@@ -1,16 +1,15 @@
 use crate::expression::Expr;
-use Expr::{Binary, Grouping, Literal, Unary};
 
 pub fn ast_print(expr: &Expr) -> String {
     match expr {
-        Unary { operator, right } => paranthesize(&operator.lexeme, &[right]),
-        Binary {
+        Expr::Unary { operator, right } => paranthesize(&operator.lexeme, &[right]),
+        Expr::Binary {
             left,
             operator,
             right,
         } => paranthesize(&operator.lexeme, &[left, right]),
-        Grouping { expression } => paranthesize("group", &[expression]),
-        Literal { value } => value.to_string(),
+        Expr::Grouping { expression } => paranthesize("group", &[expression]),
+        Expr::Literal { value } => value.to_string(),
     }
 }
 

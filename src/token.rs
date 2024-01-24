@@ -1,4 +1,6 @@
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
+
+use crate::value::Value;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
@@ -67,25 +69,6 @@ impl Token {
     }
     pub fn new(kind: TokenKind, lexeme: String, line: usize) -> Self {
         Token { kind, lexeme, line }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    Str(String),
-    Double(f64),
-    Bool(bool),
-    Nil,
-}
-
-impl Display for Value {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Value::Str(s) => std::fmt::Display::fmt(&s, f),
-            Value::Double(d) => std::fmt::Display::fmt(&d, f),
-            Value::Bool(b) => std::fmt::Display::fmt(&b, f),
-            Value::Nil => write!(f, "nil"),
-        }
     }
 }
 
