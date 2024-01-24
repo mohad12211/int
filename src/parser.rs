@@ -12,6 +12,8 @@ pub struct Parser {
     current: usize,
 }
 
+// like the function match_token, used on patterns that carry data like String or Double.
+// the second match is to bring the token that was matched into scope
 macro_rules! match_token {
     ($self:ident, $con:ident $kind:pat, $block:block) => {
         $con let Some(Token { kind: $kind, .. }) = $self.tokens.get($self.current) {
@@ -45,7 +47,7 @@ impl Parser {
                     self.syncronize();
                     match token {
                         Some(token) => println!(
-                            "{message}\nat token: `{}` at line: {}",
+                            "{message} At token: `{}` at line: {}",
                             token.lexeme, token.line
                         ),
                         None => println!("{message}"),
@@ -56,9 +58,9 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Result<Stmt, Error> {
-        match_token!(self, if TokenKind::Var, {
+        if self.match_token(TokenKind::Var) {
             return self.var_declaration();
-        });
+        }
 
         return self.statement();
     }
@@ -67,9 +69,9 @@ impl Parser {
         let name = self.consume(TokenKind::Identifier, "Expected a variable name")?;
 
         let mut initializer = Literal(Value::Nil);
-        match_token!(self, if TokenKind::Equal, {
+        if self.match_token(TokenKind::Equal) {
             initializer = self.expression()?;
-        });
+        }
 
         self.consume(
             TokenKind::Semicolon,
@@ -80,21 +82,21 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<Stmt, Error> {
-        match_token!(self, if TokenKind::For, {
+        if self.match_token(TokenKind::For) {
             return self.for_statement();
-        });
-        match_token!(self, if TokenKind::If, {
+        }
+        if self.match_token(TokenKind::If) {
             return self.if_statement();
-        });
-        match_token!(self, if TokenKind::Print, {
+        }
+        if self.match_token(TokenKind::Print) {
             return self.print_statement();
-        });
-        match_token!(self, if TokenKind::While,{
+        }
+        if self.match_token(TokenKind::While) {
             return self.while_statement();
-        });
-        match_token!(self, if TokenKind::LeftBrace, {
+        }
+        if self.match_token(TokenKind::LeftBrace) {
             return self.block();
-        });
+        }
 
         self.expression_statement()
     }
@@ -153,9 +155,9 @@ impl Parser {
 
         let then_branch = self.statement()?;
         let mut else_branch = None;
-        match_token!(self, if TokenKind::Else, {
-            else_branch  = Some(self.statement()?);
-        });
+        if self.match_token(TokenKind::Else) {
+            else_branch = Some(self.statement()?);
+        };
 
         return Ok(If(condition, then_branch, else_branch));
     }
@@ -271,26 +273,26 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expr, Error> {
-        match_token!(self, if TokenKind::False, {
+        if self.match_token(TokenKind::False) {
             return Ok(Literal(Value::Bool(false)));
-        });
-        match_token!(self, if TokenKind::True, {
+        }
+        if self.match_token(TokenKind::True) {
             return Ok(Literal(Value::Bool(true)));
-        });
-        match_token!(self, if TokenKind::Nil, {
+        }
+        if self.match_token(TokenKind::Nil) {
             return Ok(Literal(Value::Nil));
-        });
+        }
         match_token!(self, if TokenKind::String(val) | TokenKind::Number(val), {
             return Ok(Literal(val.clone()));
         });
         match_token!(self, if var TokenKind::Identifier, {
             return Ok(Variable(var));
         });
-        match_token!(self, if TokenKind::LeftParen, {
+        if self.match_token(TokenKind::LeftParen) {
             let expr = self.expression()?;
             self.consume(TokenKind::RightParen, "Unmatched delimiter: Expected `)`")?;
             return Ok(Grouping(expr));
-        });
+        }
 
         Err(Error {
             message: "Expected Expression".into(),
