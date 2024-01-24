@@ -1,13 +1,25 @@
-use crate::{expression::Expr, token::TokenKind, value::Value, ParsingError, WithToken};
+use std::collections::HashMap;
 
-pub struct Interpreter {}
+use crate::{
+    expression::Expr,
+    statement::Stmt,
+    token::{Token, TokenKind},
+    value::Value,
+    Error, WithToken,
+};
+
+pub struct Interpreter {
+    environments: Vec<HashMap<String, Value>>,
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environments: vec![HashMap::new()],
+        }
     }
 
-    pub fn evalute(&mut self, expression: Expr) -> Result<Value, ParsingError> {
+    fn evalute(&mut self, expression: Expr) -> Result<Value, Error> {
         match expression {
             Expr::Unary { operator, right } => {
                 let right = self.evalute(*right)?;
@@ -46,9 +58,9 @@ impl Interpreter {
                         } else if let (Ok(left), Ok(right)) = (left.str(), right.str()) {
                             Ok(Value::Str(left + &right))
                         } else {
-                            Err(ParsingError {
+                            Err(Error {
                                 message: "Operands must be two numbers or two strings.".into(),
-                                token: *operator,
+                                token: Some(*operator),
                             })
                         }
                     }
@@ -75,17 +87,80 @@ impl Interpreter {
             }
             Expr::Grouping { expression } => self.evalute(*expression),
             Expr::Literal { value } => Ok(*value),
+            Expr::Variable { name } => self.get(*name),
+            Expr::Assign { name, expression } => {
+                let value = self.evalute(*expression)?;
+                self.assign(*name, value)
+            }
         }
     }
 
-    pub fn interpret(&mut self, expression: Expr) {
-        let value = self.evalute(expression);
-        match value {
-            Ok(value) => println!("{value}",),
-            Err(ParsingError { message, token }) => println!(
-                "Error interpreting `{}` at line {}: {}",
-                token.lexeme, token.line, message
-            ),
+    fn execute(&mut self, statement: Stmt) -> Result<(), Error> {
+        match statement {
+            Stmt::Print { expression } => {
+                let value = self.evalute(*expression)?;
+                println!("{value}");
+                Ok(())
+            }
+            Stmt::Expression { expression } => self.evalute(*expression).map(|_| {}),
+            Stmt::Var { name, initializer } => {
+                let value = self.evalute(*initializer)?;
+                self.define(*name, value);
+                Ok(())
+            }
+            Stmt::Block { statements } => {
+                self.environments.push(HashMap::new());
+                self.interpret(*statements);
+                self.environments.pop();
+                Ok(())
+            }
         }
+    }
+
+    pub fn interpret(&mut self, statements: Vec<Stmt>) {
+        for statement in statements {
+            match self.execute(statement) {
+                Ok(()) => {}
+                Err(Error { message, token }) => match token {
+                    Some(token) => println!(
+                        "Error interpreting `{}` at line {}: {}",
+                        token.lexeme, token.line, message
+                    ),
+                    None => println!("Error interpreting `{}`", message),
+                },
+            }
+        }
+    }
+
+    fn get(&self, name: Token) -> Result<Value, Error> {
+        for environment in self.environments.iter().rev() {
+            if let Some(value) = environment.get(&name.lexeme) {
+                return Ok(value.clone());
+            }
+        }
+        Err(Error {
+            message: format!("Undefined variable `{}`.", name.lexeme),
+            token: Some(name),
+        })
+    }
+
+    fn assign(&mut self, name: Token, value: Value) -> Result<Value, Error> {
+        for environment in self.environments.iter_mut().rev() {
+            if let Some(old_value) = environment.get_mut(&name.lexeme) {
+                *old_value = value.clone();
+                return Ok(value);
+            }
+        }
+        Err(Error {
+            message: format!("Undefined variable `{}`.", name.lexeme),
+            token: Some(name),
+        })
+    }
+
+    fn define(&mut self, name: Token, value: Value) {
+        self.environments
+            .last_mut()
+            .expect("there should always be a global environment")
+            .insert(name.lexeme, value);
     }
 }

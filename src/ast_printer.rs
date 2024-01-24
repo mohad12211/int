@@ -10,6 +10,11 @@ pub fn ast_print(expr: &Expr) -> String {
         } => paranthesize(&operator.lexeme, &[left, right]),
         Expr::Grouping { expression } => paranthesize("group", &[expression]),
         Expr::Literal { value } => value.to_string(),
+        Expr::Variable { name: _ } => todo!(),
+        Expr::Assign {
+            name: _,
+            expression: _,
+        } => todo!(),
     }
 }
 

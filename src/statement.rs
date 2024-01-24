@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::{token::Token, value::Value};
+use crate::{expression::Expr, token::Token};
 
 macro_rules! generate_enum_and_functions {
     ($enum_name:ident {
@@ -20,28 +20,19 @@ macro_rules! generate_enum_and_functions {
 }
 
 generate_enum_and_functions! {
-    Expr {
-        Unary {
-            operator: Token,
-            right: Expr,
+    Stmt {
+        Block {
+            statements: Vec<Stmt>
         },
-        Binary {
-            left: Expr,
-            operator: Token,
-            right: Expr,
-        },
-        Grouping {
+        Expression {
             expression: Expr,
         },
-        Literal {
-            value: Value,
-        },
-        Variable {
-            name: Token,
-        },
-        Assign {
-            name: Token,
+        Print {
             expression: Expr,
         },
+        Var {
+            name: Token,
+            initializer: Expr,
+        }
     }
 }

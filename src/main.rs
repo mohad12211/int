@@ -42,8 +42,8 @@ fn run(source: String, interpreter: &mut Interpreter) {
     let mut scanner = Scanner::new(source);
     scanner.scan_tokens();
     let mut parser = Parser::new(scanner.tokens);
-    let expression = parser.parse();
-    interpreter.interpret(expression);
+    parser.parse();
+    interpreter.interpret(parser.statements);
 }
 
 // TODO: add error handling
