@@ -271,7 +271,7 @@ impl Parser {
 
     fn and(&mut self) -> Result<Expr, IntResult> {
         let mut expr = self.equality()?;
-        match_token!(self, while operator TokenKind::Or, {
+        match_token!(self, while operator TokenKind::And, {
             let right = self.equality()?;
             expr = Logical(expr, operator, right);
         });
