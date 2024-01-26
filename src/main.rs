@@ -20,13 +20,13 @@ pub fn main() {
     };
 }
 fn run_file(path: &str) {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::default();
     let source = fs::read_to_string(path).expect("should read file");
     run(source, &mut interpreter);
 }
 
 fn run_prompt() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::default();
     let mut iter = io::stdin().lines();
     loop {
         print!("> ");
@@ -45,13 +45,3 @@ fn run(source: String, interpreter: &mut Interpreter) {
     parser.parse();
     interpreter.interpret(parser.statements);
 }
-
-// TODO: add error handling
-//
-// fn error(line: usize, message: &str) {
-//     report(line, "", message);
-// }
-//
-// fn report(line: usize, location: &str, message: &str) {
-//     println!("[line {line}] Error{location}: {message}");
-// }

@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::{expression::Expr, generate_enum_and_functions, token::Token};
+use crate::{expression::Expr, functions::Function, generate_enum_and_functions, token::Token};
 
 generate_enum_and_functions! {
     Stmt {
@@ -9,6 +9,9 @@ generate_enum_and_functions! {
         Expression {
             expression: Expr,
         },
+        Function {
+            fun: Function,
+        },
         If {
             condition: Expr,
             then_branch: Stmt,
@@ -16,6 +19,10 @@ generate_enum_and_functions! {
         },
         Print {
             expression: Expr,
+        },
+        Return {
+            keyword: Token,
+            value: Expr,
         },
         Var {
             initializer: Expr,

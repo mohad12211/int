@@ -12,6 +12,11 @@ generate_enum_and_functions! {
             operator: Token,
             right: Expr,
         },
+        Call {
+            callee: Expr,
+            paren: Token,
+            arguments: Vec<Expr>,
+        },
         Grouping {
             expression: Expr,
         },

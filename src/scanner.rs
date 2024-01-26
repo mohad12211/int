@@ -152,7 +152,7 @@ impl Scanner {
     fn consume(&mut self) -> char {
         let char = self.source[self.current];
         self.current += 1;
-        return char;
+        char
     }
 
     fn peek(&self) -> Option<char> {
@@ -166,9 +166,10 @@ impl Scanner {
     fn try_consume(&mut self, expected: char) -> bool {
         if self.peek() == Some(expected) {
             self.consume();
-            return true;
+            true
+        } else {
+            false
         }
-        return false;
     }
 
     fn add_token(&mut self, kind: TokenKind) {

@@ -1,11 +1,14 @@
 use std::fmt::Display;
 
+use crate::functions::Callable;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Str(String),
     Double(f64),
     Bool(bool),
     Nil,
+    Fun(Callable),
 }
 
 impl Display for Value {
@@ -15,6 +18,7 @@ impl Display for Value {
             Value::Double(d) => std::fmt::Display::fmt(&d, f),
             Value::Bool(b) => std::fmt::Display::fmt(&b, f),
             Value::Nil => write!(f, "nil"),
+            Value::Fun(fun) => write!(f, "{}", fun.fun.name()),
         }
     }
 }
@@ -36,5 +40,12 @@ impl Value {
 
     pub fn is_truthy(&self) -> bool {
         !matches!(self, Value::Bool(false) | Value::Nil)
+    }
+
+    pub fn fun(self) -> Result<Callable, String> {
+        match self {
+            Value::Fun(f) => Ok(f),
+            _ => Err("Operand must be a function or a class".into()),
+        }
     }
 }
