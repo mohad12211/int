@@ -90,6 +90,7 @@ impl Interpreter {
                         left.double().with_token(&operator)?
                             <= right.double().with_token(operator)?,
                     )),
+                    TokenKind::Comma => Ok(right),
                     _ => unreachable!("Invalid binary operator: {operator:?}"),
                 }
             }

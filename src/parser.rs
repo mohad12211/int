@@ -241,7 +241,18 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, IntResult> {
-        self.assignment()
+        self.comma()
+    }
+
+    fn comma(&mut self) -> Result<Expr, IntResult> {
+        let mut expr = self.assignment()?;
+
+        match_token!(self, while operator TokenKind::Comma, {
+            let right = self.assignment()?;
+            expr = Binary(expr, operator, right);
+        });
+
+        Ok(expr)
     }
 
     fn assignment(&mut self) -> Result<Expr, IntResult> {
@@ -343,7 +354,7 @@ impl Parser {
             if token.kind != TokenKind::RightParen {
                 loop {
                     // TODO: add parameter limit
-                    arguments.push(self.expression()?);
+                    arguments.push(self.assignment()?);
                     if !self.match_token(TokenKind::Comma) {
                         break;
                     }
