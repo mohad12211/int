@@ -33,6 +33,9 @@ generate_enum_and_functions! {
         Break {
             keyword: Token,
         },
+        Continue {
+            keyword: Token,
+        },
         Var {
             initializer: Expr,
             name: Token,

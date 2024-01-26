@@ -68,6 +68,10 @@ impl IntCallable for Function {
                 message: "break is only allowed in loops.".into(),
                 token: Some(keyword),
             }),
+            Err(IntResult::Continue(keyword)) => Err(IntResult::Error {
+                message: "continue is only allowed in loops.".into(),
+                token: Some(keyword),
+            }),
         }
     }
 }

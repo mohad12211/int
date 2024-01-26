@@ -3,7 +3,9 @@ use crate::{
         Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable,
     },
     functions::Function,
-    statement::{Block, Break, Expression, For, Function, If, Print, Return, Stmt, Var, While},
+    statement::{
+        Block, Break, Continue, Expression, For, Function, If, Print, Return, Stmt, Var, While,
+    },
     token::{Token, TokenKind},
     value::Value,
     IntResult,
@@ -58,10 +60,13 @@ impl Parser {
                         None => println!("{message}"),
                     }
                 }
-                Err(IntResult::ReturnValue(_, _)) => {
-                    unreachable!("No return statements in parsing")
+                Err(
+                    IntResult::ReturnValue(_, _) | IntResult::Break(_) | IntResult::Continue(_),
+                ) => {
+                    unreachable!(
+                        "return/break/continue are only invoked while intepreting, not parsing"
+                    )
                 }
-                Err(IntResult::Break(_)) => unreachable!("No break statements in parsing"),
             }
         }
         result
@@ -141,6 +146,9 @@ impl Parser {
         match_token!(self, if keyword TokenKind::Break, {
             return self.break_statement(keyword);
         });
+        match_token!(self, if keyword TokenKind::Continue, {
+            return self.continue_statement(keyword);
+        });
         if self.match_token(TokenKind::While) {
             return self.while_statement();
         }
@@ -154,6 +162,11 @@ impl Parser {
     fn break_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
         self.consume(TokenKind::Semicolon, "Expected `;` after break.")?;
         Ok(Break(keyword))
+    }
+
+    fn continue_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
+        self.consume(TokenKind::Semicolon, "Expected `;` after continue.")?;
+        Ok(Continue(keyword))
     }
 
     fn return_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
@@ -200,7 +213,7 @@ impl Parser {
         //     body = Block(vec![initializer, body]);
         // }
 
-        Ok(For(initializer, condition, increment, body))
+        Ok(Block(vec![For(initializer, condition, increment, body)]))
     }
 
     fn while_statement(&mut self) -> Result<Stmt, IntResult> {

@@ -46,6 +46,7 @@ pub enum TokenKind {
     Print,
     Return,
     Break,
+    Continue,
     Super,
     This,
     True,

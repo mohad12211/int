@@ -232,7 +232,8 @@ impl Interpreter {
                     match self.execute(*body.clone()) {
                         Ok(_) => {}
                         Err(IntResult::Break(_)) => return Ok(()),
-                        Err(e) => return Err(e),
+                        Err(IntResult::Continue(_)) => {}
+                        Err(err) => return Err(err),
                     }
 
                     if let Some(increment) = *increment.clone() {
@@ -241,6 +242,7 @@ impl Interpreter {
                 }
                 Ok(())
             }
+            Stmt::Continue { keyword } => Err(IntResult::Continue(*keyword)),
         }
     }
 
@@ -271,6 +273,13 @@ impl Interpreter {
                     );
                     return;
                 }
+                Err(IntResult::Continue(keyword)) => {
+                    println!(
+                        "Error interpreting: continue is only allowed in loops. At line: {}",
+                        keyword.line
+                    );
+                    return;
+                }
             }
         }
     }
@@ -294,15 +303,7 @@ impl Interpreter {
         for statement in statements.clone() {
             match self.execute(statement) {
                 Ok(()) => {}
-                Err(b @ IntResult::Break(_)) => {
-                    result = Err(b);
-                    break;
-                }
-                Err(return_value @ IntResult::ReturnValue(_, _)) => {
-                    result = Err(return_value);
-                    break;
-                }
-                Err(err @ IntResult::Error { .. }) => {
+                Err(err) => {
                     result = Err(err);
                     break;
                 }
