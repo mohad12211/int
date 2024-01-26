@@ -40,6 +40,7 @@ pub enum IntResult {
         token: Option<Token>,
     },
     ReturnValue(Value, Token),
+    Break(Token),
 }
 
 trait WithToken<T> {

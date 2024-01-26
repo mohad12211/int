@@ -64,6 +64,10 @@ impl IntCallable for Function {
             Ok(()) => Ok(Value::Nil),
             Err(IntResult::ReturnValue(value, _)) => Ok(value),
             Err(err @ IntResult::Error { .. }) => Err(err),
+            Err(IntResult::Break(keyword)) => Err(IntResult::Error {
+                message: "break is only allowed in loops.".into(),
+                token: Some(keyword),
+            }),
         }
     }
 }

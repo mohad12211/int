@@ -198,7 +198,11 @@ impl Interpreter {
             }
             Stmt::While { condition, body } => {
                 while self.evalute(*condition.clone())?.is_truthy() {
-                    self.execute(*body.clone())?;
+                    match self.execute(*body.clone()) {
+                        Ok(()) => {}
+                        Err(IntResult::Break(_)) => return Ok(()),
+                        Err(e) => return Err(e),
+                    }
                 }
                 Ok(())
             }
@@ -214,6 +218,7 @@ impl Interpreter {
                 let return_value = self.evalute(*value)?;
                 Err(IntResult::ReturnValue(return_value, *keyword))
             }
+            Stmt::Break { keyword } => Err(IntResult::Break(*keyword)),
         }
     }
 
@@ -236,6 +241,13 @@ impl Interpreter {
                         ),
                         None => println!("Error interpreting `{}`", message),
                     };
+                }
+                Err(IntResult::Break(keyword)) => {
+                    println!(
+                        "Error interpreting: break is only allowed in loops. At line: {}",
+                        keyword.line
+                    );
+                    return;
                 }
             }
         }
@@ -260,6 +272,10 @@ impl Interpreter {
         for statement in statements.clone() {
             match self.execute(statement) {
                 Ok(()) => {}
+                Err(b @ IntResult::Break(_)) => {
+                    result = Err(b);
+                    break;
+                }
                 Err(return_value @ IntResult::ReturnValue(_, _)) => {
                     result = Err(return_value);
                     break;

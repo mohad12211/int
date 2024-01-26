@@ -216,6 +216,7 @@ impl Scanner {
             "true" => Some(True),
             "var" => Some(Var),
             "while" => Some(While),
+            "break" => Some(Break),
             _ => None,
         }
     }

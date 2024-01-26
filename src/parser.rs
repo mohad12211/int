@@ -3,7 +3,7 @@ use crate::{
         Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable,
     },
     functions::Function,
-    statement::{Block, Expression, Function, If, Print, Return, Stmt, Var, While},
+    statement::{Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While},
     token::{Token, TokenKind},
     value::Value,
     IntResult,
@@ -58,7 +58,10 @@ impl Parser {
                         None => println!("{message}"),
                     }
                 }
-                Err(IntResult::ReturnValue(_, _)) => unreachable!("No return values in parsing"),
+                Err(IntResult::ReturnValue(_, _)) => {
+                    unreachable!("No return statements in parsing")
+                }
+                Err(IntResult::Break(_)) => unreachable!("No break statements in parsing"),
             }
         }
         result
@@ -135,6 +138,9 @@ impl Parser {
         match_token!(self, if keyword TokenKind::Return ,{
             return self.return_statement(keyword);
         });
+        match_token!(self, if keyword TokenKind::Break, {
+            return self.break_statement(keyword);
+        });
         if self.match_token(TokenKind::While) {
             return self.while_statement();
         }
@@ -143,6 +149,11 @@ impl Parser {
         }
 
         self.expression_statement()
+    }
+
+    fn break_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
+        self.consume(TokenKind::Semicolon, "Expected `;` after break.")?;
+        Ok(Break(keyword))
     }
 
     fn return_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
