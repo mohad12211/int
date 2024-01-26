@@ -62,7 +62,7 @@ impl IntCallable for Function {
         }
         match interpreter.execute_block(self.body.clone(), &[0], values) {
             Ok(()) => Ok(Value::Nil),
-            Err(IntResult::ReturnValue(value)) => Ok(value),
+            Err(IntResult::ReturnValue(value, _)) => Ok(value),
             Err(err @ IntResult::Error { .. }) => Err(err),
         }
     }

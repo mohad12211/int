@@ -56,7 +56,7 @@ impl Parser {
                         None => println!("{message}"),
                     }
                 }
-                Err(IntResult::ReturnValue(_)) => unreachable!("No return values in parsing"),
+                Err(IntResult::ReturnValue(_, _)) => unreachable!("No return values in parsing"),
             }
         }
         result

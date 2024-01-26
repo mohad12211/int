@@ -39,7 +39,7 @@ pub enum IntResult {
         message: String,
         token: Option<Token>,
     },
-    ReturnValue(Value),
+    ReturnValue(Value, Token),
 }
 
 trait WithToken<T> {

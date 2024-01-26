@@ -194,9 +194,9 @@ impl Interpreter {
                 );
                 Ok(())
             }
-            Stmt::Return { keyword: _, value } => {
+            Stmt::Return { keyword, value } => {
                 let return_value = self.evalute(*value)?;
-                Err(IntResult::ReturnValue(return_value))
+                Err(IntResult::ReturnValue(return_value, *keyword))
             }
         }
     }
@@ -205,8 +205,12 @@ impl Interpreter {
         for statement in statements.clone() {
             match self.execute(statement.clone()) {
                 Ok(()) => {}
-                Err(IntResult::ReturnValue(_)) => {
-                    unreachable!("Top level statements can't have ret")
+                Err(IntResult::ReturnValue(_, keyword)) => {
+                    println!(
+                        "Error interpreting: Top level return is not allowed. At line: {}",
+                        keyword.line
+                    );
+                    return;
                 }
                 Err(IntResult::Error { message, token }) => {
                     match token {
@@ -240,7 +244,7 @@ impl Interpreter {
         for statement in statements.clone() {
             match self.execute(statement) {
                 Ok(()) => {}
-                Err(return_value @ IntResult::ReturnValue(_)) => {
+                Err(return_value @ IntResult::ReturnValue(_, _)) => {
                     result = Err(return_value);
                     break;
                 }
