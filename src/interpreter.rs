@@ -219,6 +219,28 @@ impl Interpreter {
                 Err(IntResult::ReturnValue(return_value, *keyword))
             }
             Stmt::Break { keyword } => Err(IntResult::Break(*keyword)),
+            Stmt::For {
+                initializer,
+                condition,
+                increment,
+                body,
+            } => {
+                if let Some(initializer) = *initializer {
+                    self.execute(initializer)?;
+                }
+                while self.evalute(*condition.clone())?.is_truthy() {
+                    match self.execute(*body.clone()) {
+                        Ok(_) => {}
+                        Err(IntResult::Break(_)) => return Ok(()),
+                        Err(e) => return Err(e),
+                    }
+
+                    if let Some(increment) = *increment.clone() {
+                        self.evalute(increment)?;
+                    }
+                }
+                Ok(())
+            }
         }
     }
 

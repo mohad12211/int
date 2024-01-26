@@ -3,7 +3,7 @@ use crate::{
         Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable,
     },
     functions::Function,
-    statement::{Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While},
+    statement::{Block, Break, Expression, For, Function, If, Print, Return, Stmt, Var, While},
     token::{Token, TokenKind},
     value::Value,
     IntResult,
@@ -191,16 +191,16 @@ impl Parser {
             Some(increment)
         };
 
-        let mut body = self.statement()?;
-        if let Some(increment) = increment {
-            body = Block(vec![body, Expression(increment)]);
-        }
-        body = While(condition, body);
-        if let Some(initializer) = initializer {
-            body = Block(vec![initializer, body]);
-        }
+        let body = self.statement()?;
+        // if let Some(increment) = increment {
+        //     body = Block(vec![body, Expression(increment)]);
+        // }
+        // body = While(condition, body);
+        // if let Some(initializer) = initializer {
+        //     body = Block(vec![initializer, body]);
+        // }
 
-        Ok(body)
+        Ok(For(initializer, condition, increment, body))
     }
 
     fn while_statement(&mut self) -> Result<Stmt, IntResult> {

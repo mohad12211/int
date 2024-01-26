@@ -9,6 +9,12 @@ generate_enum_and_functions! {
         Expression {
             expression: Expr,
         },
+        For {
+            initializer: Option<Stmt>,
+            condition: Expr,
+            increment: Option<Expr>,
+            body: Stmt,
+        },
         Function {
             fun: Function,
         },
