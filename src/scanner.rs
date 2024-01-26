@@ -80,6 +80,20 @@ impl Scanner {
                     while self.peek().is_some_and(|c| c != '\n') {
                         self.consume();
                     }
+                } else if self.try_consume('*') {
+                    while self.peek().is_some_and(|c| c != '*')
+                        || self.peek_next().is_some_and(|c| c != '/')
+                    {
+                        if self.peek() == Some('\n') {
+                            self.line += 1;
+                        }
+                        self.consume();
+                    }
+
+                    if !self.try_consume('*') || !self.try_consume('/') {
+                        println!("Unterminated block comment at line {}.", self.line);
+                        exit(1);
+                    }
                 } else {
                     self.add_token(Slash)
                 }
