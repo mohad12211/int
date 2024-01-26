@@ -42,6 +42,7 @@ fn run(source: String, interpreter: &mut Interpreter) {
     let mut scanner = Scanner::new(source);
     scanner.scan_tokens();
     let mut parser = Parser::new(scanner.tokens);
-    parser.parse();
-    interpreter.interpret(parser.statements);
+    if let Ok(()) = parser.parse() {
+        interpreter.interpret(parser.statements);
+    }
 }

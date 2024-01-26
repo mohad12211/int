@@ -39,12 +39,14 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) {
+    pub fn parse(&mut self) -> Result<(), ()> {
+        let mut result = Ok(());
         while !self.is_at_end() {
             let statement = self.declaration();
             match statement {
                 Ok(statement) => self.statements.push(statement),
                 Err(IntResult::Error { message, token }) => {
+                    result = Err(());
                     self.syncronize();
                     match token {
                         Some(token) => println!(
@@ -57,6 +59,7 @@ impl Parser {
                 Err(IntResult::ReturnValue(_)) => unreachable!("No return values in parsing"),
             }
         }
+        result
     }
 
     fn declaration(&mut self) -> Result<Stmt, IntResult> {
