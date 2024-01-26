@@ -380,7 +380,7 @@ impl Parser {
 
         Err(IntResult::Error {
             message: "Expected Expression".into(),
-            token: None,
+            token: self.tokens.get(self.current).cloned(),
         })
     }
 
