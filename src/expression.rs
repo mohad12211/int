@@ -23,6 +23,11 @@ generate_enum_and_functions! {
         Literal {
             value: Value,
         },
+        Ternary {
+            condition: Expr,
+            then_branch: Expr,
+            else_branch: Expr,
+        },
         Logical {
             left: Expr,
             operator: Token,

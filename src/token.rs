@@ -15,6 +15,8 @@ pub enum TokenKind {
     Semicolon,
     Slash,
     Star,
+    Question,
+    Colon,
 
     // One or two character tokens.
     Bang,

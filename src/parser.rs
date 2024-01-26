@@ -1,5 +1,7 @@
 use crate::{
-    expression::{Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable},
+    expression::{
+        Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable,
+    },
     functions::Function,
     statement::{Block, Expression, Function, If, Print, Return, Stmt, Var, While},
     token::{Token, TokenKind},
@@ -256,7 +258,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr, IntResult> {
-        let left = self.or()?;
+        let left = self.ternary()?;
 
         match_token!(self, if equals TokenKind::Equal, {
             let value = self.assignment()?;
@@ -268,6 +270,18 @@ impl Parser {
         });
 
         Ok(left)
+    }
+
+    fn ternary(&mut self) -> Result<Expr, IntResult> {
+        let mut expr = self.or()?;
+        if self.match_token(TokenKind::Question) {
+            let then_branch = self.expression()?;
+            self.consume(TokenKind::Colon, "Expected `:` after ternary condition")?;
+            let else_branch = self.ternary()?;
+            expr = Ternary(expr, then_branch, else_branch);
+        }
+
+        Ok(expr)
     }
 
     fn or(&mut self) -> Result<Expr, IntResult> {

@@ -47,6 +47,8 @@ impl Scanner {
             '+' => self.add_token(Plus),
             ';' => self.add_token(Semicolon),
             '*' => self.add_token(Star),
+            '?' => self.add_token(Question),
+            ':' => self.add_token(Colon),
             '!' => {
                 if self.try_consume('=') {
                     self.add_token(BangEqual)

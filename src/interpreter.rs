@@ -148,6 +148,17 @@ impl Interpreter {
                 }
                 fun.fun.call(self, arguments)
             }
+            Expr::Ternary {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                if self.evalute(*condition)?.is_truthy() {
+                    Ok(self.evalute(*then_branch)?)
+                } else {
+                    Ok(self.evalute(*else_branch)?)
+                }
+            }
         }
     }
 
