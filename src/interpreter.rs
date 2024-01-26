@@ -60,18 +60,22 @@ impl Interpreter {
                         left.double().with_token(&operator)?
                             * right.double().with_token(operator)?,
                     )),
-                    TokenKind::Plus => {
-                        if let (Ok(left), Ok(right)) = (left.double(), right.double()) {
-                            Ok(Value::Double(left + right))
-                        } else if let (Ok(left), Ok(right)) = (left.str(), right.str()) {
-                            Ok(Value::Str(left + &right))
-                        } else {
-                            Err(IntResult::Error {
-                                message: "Operands must be two numbers or two strings.".into(),
-                                token: Some(*operator),
-                            })
+                    TokenKind::Plus => match (left, right) {
+                        (Value::Str(left), Value::Str(right)) => Ok(Value::Str(left + &right)),
+                        (Value::Str(left), Value::Double(right)) => {
+                            Ok(Value::Str(left + &right.to_string()))
                         }
-                    }
+                        (Value::Double(left), Value::Str(right)) => {
+                            Ok(Value::Str(left.to_string() + &right))
+                        }
+                        (Value::Double(left), Value::Double(right)) => {
+                            Ok(Value::Double(left + right))
+                        }
+                        _ => Err(IntResult::Error {
+                            message: "One of the operands must be a string and a double".into(),
+                            token: Some(*operator),
+                        }),
+                    },
                     TokenKind::BangEqual => Ok(Value::Bool(left.ne(&right))),
                     TokenKind::EqualEqual => Ok(Value::Bool(left.eq(&right))),
                     TokenKind::Greater => Ok(Value::Bool(
