@@ -43,6 +43,6 @@ fn run(source: String, interpreter: &mut Interpreter) {
     scanner.scan_tokens();
     let mut parser = Parser::new(scanner.tokens);
     if let Ok(()) = parser.parse() {
-        interpreter.interpret(parser.statements);
+        interpreter.interpret(&parser.statements);
     }
 }

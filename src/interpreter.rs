@@ -27,10 +27,10 @@ impl Default for Interpreter {
 }
 
 impl Interpreter {
-    fn evalute(&mut self, expression: Expr) -> Result<Value, IntResult> {
+    fn evalute(&mut self, expression: &Expr) -> Result<Value, IntResult> {
         match expression {
             Expr::Unary { operator, right } => {
-                let right = self.evalute(*right)?;
+                let right = self.evalute(right)?;
                 match operator.kind {
                     TokenKind::Minus => {
                         let value = right.double().with_token(operator)?;
@@ -45,19 +45,19 @@ impl Interpreter {
                 operator,
                 right,
             } => {
-                let left = self.evalute(*left)?;
-                let right = self.evalute(*right)?;
+                let left = self.evalute(left)?;
+                let right = self.evalute(right)?;
                 match operator.kind {
                     TokenKind::Minus => Ok(Value::Double(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             - right.double().with_token(operator)?,
                     )),
                     TokenKind::Slash => Ok(Value::Double(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             / right.double().with_token(operator)?,
                     )),
                     TokenKind::Star => Ok(Value::Double(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             * right.double().with_token(operator)?,
                     )),
                     TokenKind::Plus => match (left, right) {
@@ -73,45 +73,44 @@ impl Interpreter {
                         }
                         _ => Err(IntResult::Error {
                             message: "One of the operands must be a string and a double".into(),
-                            token: Some(*operator),
+                            token: Some(operator.as_ref().clone()),
                         }),
                     },
                     TokenKind::BangEqual => Ok(Value::Bool(left.ne(&right))),
                     TokenKind::EqualEqual => Ok(Value::Bool(left.eq(&right))),
                     TokenKind::Greater => Ok(Value::Bool(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             > right.double().with_token(operator)?,
                     )),
                     TokenKind::GreaterEqual => Ok(Value::Bool(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             >= right.double().with_token(operator)?,
                     )),
                     TokenKind::Less => Ok(Value::Bool(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             < right.double().with_token(operator)?,
                     )),
                     TokenKind::LessEqual => Ok(Value::Bool(
-                        left.double().with_token(&operator)?
+                        left.double().with_token(operator)?
                             <= right.double().with_token(operator)?,
                     )),
                     TokenKind::Comma => Ok(right),
                     _ => unreachable!("Invalid binary operator: {operator:?}"),
                 }
             }
-            Expr::Grouping { expression } => self.evalute(*expression),
-            Expr::Literal { value } => Ok(*value),
-            Expr::Variable { name } => self.environment.get(&name, &mut self.environments),
+            Expr::Grouping { expression } => self.evalute(expression),
+            Expr::Literal { value } => Ok(value.as_ref().clone()),
+            Expr::Variable { name } => self.environment.get(name, &mut self.environments),
             Expr::Assign { name, expression } => {
-                let value = self.evalute(*expression)?;
-                self.environment
-                    .assign(&name, value, &mut self.environments)
+                let value = self.evalute(expression)?;
+                self.environment.assign(name, value, &mut self.environments)
             }
             Expr::Logical {
                 left,
                 operator,
                 right,
             } => {
-                let left = self.evalute(*left)?;
+                let left = self.evalute(left)?;
                 match operator.kind {
                     TokenKind::And => {
                         if !left.is_truthy() {
@@ -126,20 +125,20 @@ impl Interpreter {
                     _ => unreachable!("Invalid logical operator: {operator:?}"),
                 }
 
-                self.evalute(*right)
+                self.evalute(right)
             }
             Expr::Call {
                 callee,
                 paren,
                 arguments,
             } => {
-                let callee = self.evalute(*callee)?;
+                let callee = self.evalute(callee)?;
                 let arguments = arguments
-                    .into_iter()
+                    .iter()
                     .map(|arg| self.evalute(arg))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                let fun = callee.fun().with_token(paren.clone())?;
+                let fun = callee.fun().with_token(paren)?;
                 if fun.fun.arity() != arguments.len() {
                     return Err(IntResult::Error {
                         message: format!(
@@ -147,7 +146,7 @@ impl Interpreter {
                             arguments.len(),
                             fun.fun.arity()
                         ),
-                        token: Some(*paren),
+                        token: Some((paren.as_ref()).clone()),
                     });
                 }
                 fun.fun.call(self, arguments)
@@ -157,31 +156,31 @@ impl Interpreter {
                 then_branch,
                 else_branch,
             } => {
-                if self.evalute(*condition)?.is_truthy() {
-                    Ok(self.evalute(*then_branch)?)
+                if self.evalute(condition)?.is_truthy() {
+                    Ok(self.evalute(then_branch)?)
                 } else {
-                    Ok(self.evalute(*else_branch)?)
+                    Ok(self.evalute(else_branch)?)
                 }
             }
         }
     }
 
-    fn execute(&mut self, statement: Stmt) -> Result<(), IntResult> {
+    fn execute(&mut self, statement: &Stmt) -> Result<(), IntResult> {
         match statement {
             Stmt::Print { expression } => {
-                let value = self.evalute(*expression)?;
+                let value = self.evalute(expression)?;
                 println!("{value}");
                 Ok(())
             }
-            Stmt::Expression { expression } => self.evalute(*expression).map(|_| {}),
+            Stmt::Expression { expression } => self.evalute(expression).map(|_| {}),
             Stmt::Var { name, initializer } => {
-                let value = self.evalute(*initializer)?;
+                let value = self.evalute(initializer)?;
                 self.environment
-                    .define(name.lexeme, value, &mut self.environments);
+                    .define(name.lexeme.clone(), value, &mut self.environments);
                 Ok(())
             }
             Stmt::Block { statements } => {
-                self.execute_block(*statements, &self.environment.ids.clone(), HashMap::new())?;
+                self.execute_block(statements, &self.environment.ids.clone(), HashMap::new())?;
                 Ok(())
             }
             Stmt::If {
@@ -189,16 +188,16 @@ impl Interpreter {
                 then_branch,
                 else_branch,
             } => {
-                if self.evalute(*condition)?.is_truthy() {
-                    self.execute(*then_branch)?;
-                } else if let Some(else_branch) = *else_branch {
+                if self.evalute(condition)?.is_truthy() {
+                    self.execute(then_branch)?;
+                } else if let Some(else_branch) = else_branch.as_ref() {
                     self.execute(else_branch)?;
                 }
                 Ok(())
             }
             Stmt::While { condition, body } => {
-                while self.evalute(*condition.clone())?.is_truthy() {
-                    match self.execute(*body.clone()) {
+                while self.evalute(condition)?.is_truthy() {
+                    match self.execute(body) {
                         Ok(()) => {}
                         Err(IntResult::Break(_)) => return Ok(()),
                         Err(e) => return Err(e),
@@ -209,46 +208,51 @@ impl Interpreter {
             Stmt::Function { fun } => {
                 self.environment.define(
                     fun.name.lexeme.clone(),
-                    Value::Fun(Callable { fun: Rc::new(*fun) }),
+                    Value::Fun(Callable {
+                        fun: Rc::new(fun.as_ref().clone()),
+                    }),
                     &mut self.environments,
                 );
                 Ok(())
             }
             Stmt::Return { keyword, value } => {
-                let return_value = self.evalute(*value)?;
-                Err(IntResult::ReturnValue(return_value, *keyword))
+                let return_value = self.evalute(value)?;
+                Err(IntResult::ReturnValue(
+                    return_value,
+                    (keyword.as_ref()).clone(),
+                ))
             }
-            Stmt::Break { keyword } => Err(IntResult::Break(*keyword)),
+            Stmt::Break { keyword } => Err(IntResult::Break(keyword.as_ref().clone())),
             Stmt::For {
                 initializer,
                 condition,
                 increment,
                 body,
             } => {
-                if let Some(initializer) = *initializer {
+                if let Some(initializer) = initializer.as_ref() {
                     self.execute(initializer)?;
                 }
-                while self.evalute(*condition.clone())?.is_truthy() {
-                    match self.execute(*body.clone()) {
+                while self.evalute(condition)?.is_truthy() {
+                    match self.execute(body) {
                         Ok(_) => {}
                         Err(IntResult::Break(_)) => return Ok(()),
                         Err(IntResult::Continue(_)) => {}
                         Err(err) => return Err(err),
                     }
 
-                    if let Some(increment) = *increment.clone() {
+                    if let Some(increment) = increment.as_ref() {
                         self.evalute(increment)?;
                     }
                 }
                 Ok(())
             }
-            Stmt::Continue { keyword } => Err(IntResult::Continue(*keyword)),
+            Stmt::Continue { keyword } => Err(IntResult::Continue(keyword.as_ref().clone())),
         }
     }
 
-    pub fn interpret(&mut self, statements: Vec<Stmt>) {
-        for statement in statements.clone() {
-            match self.execute(statement.clone()) {
+    pub fn interpret(&mut self, statements: &[Stmt]) {
+        for statement in statements {
+            match self.execute(statement) {
                 Ok(()) => {}
                 Err(IntResult::ReturnValue(_, keyword)) => {
                     println!(
@@ -286,7 +290,7 @@ impl Interpreter {
 
     pub fn execute_block(
         &mut self,
-        statements: Vec<Stmt>,
+        statements: &[Stmt],
         enclosing_ids: &[usize],
         values: HashMap<String, Value>,
     ) -> Result<(), IntResult> {
@@ -300,7 +304,7 @@ impl Interpreter {
         );
         mem::swap(&mut environment, &mut self.environment);
         let mut result = Ok(());
-        for statement in statements.clone() {
+        for statement in statements {
             match self.execute(statement) {
                 Ok(()) => {}
                 Err(err) => {

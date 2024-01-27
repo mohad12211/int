@@ -60,7 +60,7 @@ impl IntCallable for Function {
         for (token, argument) in self.params.clone().into_iter().zip(arguments) {
             values.insert(token.lexeme, argument);
         }
-        match interpreter.execute_block(self.body.clone(), &[0], values) {
+        match interpreter.execute_block(&self.body, &[0], values) {
             Ok(()) => Ok(Value::Nil),
             Err(IntResult::ReturnValue(value, _)) => Ok(value),
             Err(err @ IntResult::Error { .. }) => Err(err),
