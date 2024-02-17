@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::functions::Callable;
 
@@ -9,6 +9,7 @@ pub enum Value {
     Bool(bool),
     Nil,
     Fun(Callable),
+    Struct(HashMap<String, Value>),
 }
 
 impl Display for Value {
@@ -19,6 +20,8 @@ impl Display for Value {
             Value::Bool(b) => std::fmt::Display::fmt(&b, f),
             Value::Nil => write!(f, "nil"),
             Value::Fun(fun) => write!(f, "{}", fun.fun.name()),
+            // TODO: remove debug rpint
+            Value::Struct(map) => write!(f, "{:?}", map),
         }
     }
 }

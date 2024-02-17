@@ -40,5 +40,9 @@ generate_enum_and_functions! {
             name: Token,
             expression: Expr,
         },
+        // TODO: maybe rename this to map or something
+        Struct {
+            fields: Vec<(Token, Expr)>
+        }
     }
 }

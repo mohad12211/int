@@ -232,6 +232,14 @@ impl Interpreter {
                     Ok(self.evalute(else_branch)?)
                 }
             }
+            Expr::Struct { fields } => {
+                let mut map = HashMap::new();
+                for (token, expr) in fields.as_ref() {
+                    let value = self.evalute(&expr)?;
+                    map.insert(token.lexeme.clone(), value);
+                }
+                Ok(Value::Struct(map))
+            }
         }
     }
 

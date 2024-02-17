@@ -1,6 +1,6 @@
 use crate::{
     expression::{
-        Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable,
+        Assign, Binary, Call, Expr, Grouping, Literal, Logical, Struct, Ternary, Unary, Variable,
     },
     functions::Function,
     statement::{
@@ -425,10 +425,35 @@ impl Parser {
             return Ok(Grouping(expr));
         }
 
+        if self.match_token(TokenKind::LeftBrace) {
+            let fields = self.consume_struct()?;
+            return Ok(Struct(fields));
+        }
+
         Err(IntError::Error {
             message: "Expected Expression".into(),
             token: self.tokens.get(self.current).cloned(),
         })
+    }
+
+    fn consume_struct(&mut self) -> Result<Vec<(Token, Expr)>, IntError> {
+        let mut fields = Vec::new();
+
+        match_token!(self, while name TokenKind::Identifier, {
+            self.consume(TokenKind::Colon, "Expected `:` after struct name")?;
+            let value = self.ternary()?;
+            fields.push((name, value));
+            if !self.match_token(TokenKind::Comma) {
+                break;
+            }
+        });
+
+        self.consume(
+            TokenKind::RightBrace,
+            "Unmatched delimiter: Expected `}` after struct",
+        )?;
+
+        Ok(fields)
     }
 
     fn consume(&mut self, kind: TokenKind, message: &str) -> Result<Token, IntError> {
