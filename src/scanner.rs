@@ -113,6 +113,23 @@ impl Scanner {
         };
     }
 
+    fn consume_hex_literal(&mut self) {
+        while self
+            .peek()
+            .is_some_and(|c| matches!(c, '0'..='9' | 'A'..='F' | 'a'..='f'))
+        {
+            self.consume();
+        }
+
+        let value = self.source[(self.start + 2)..self.current]
+            .iter()
+            .collect::<String>();
+        // TODO: this expect might crash on very large values
+        let value =
+            f64::from(u32::from_str_radix(&value, 16).expect("Should be valid hexadecimal"));
+        self.add_token(TokenKind::Number(Value::Double(value)))
+    }
+
     fn consume_identifer(&mut self) {
         while self.peek().is_some_and(|c| c.is_alphanumeric()) {
             self.consume();
@@ -124,6 +141,11 @@ impl Scanner {
     }
 
     fn consume_number_literal(&mut self) {
+        if self.peek().is_some_and(|c| c == 'X' || c == 'x') {
+            self.consume();
+            self.consume_hex_literal();
+            return;
+        }
         while self.peek().is_some_and(|c| c.is_ascii_digit()) {
             self.consume();
         }

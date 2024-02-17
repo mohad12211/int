@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{token::Token, value::Value, IntResult};
+use crate::{token::Token, value::Value, IntError};
 
 #[derive(Debug, Default)]
 pub struct Environment {
@@ -16,14 +16,14 @@ impl Environment {
         &self,
         name: &Token,
         environments: &mut [HashMap<String, Value>],
-    ) -> Result<Value, IntResult> {
+    ) -> Result<Value, IntError> {
         for &id in self.ids.iter().rev() {
             if let Some(value) = environments[id].get(&name.lexeme) {
                 return Ok(value.clone());
             }
         }
 
-        Err(IntResult::Error {
+        Err(IntError::Error {
             message: format!("Undefined variable `{}`.", name.lexeme),
             token: Some(name.clone()),
         })
@@ -34,14 +34,14 @@ impl Environment {
         name: &Token,
         value: Value,
         environments: &mut [HashMap<String, Value>],
-    ) -> Result<Value, IntResult> {
+    ) -> Result<Value, IntError> {
         for &id in self.ids.iter().rev() {
             if let Some(old_value) = environments[id].get_mut(&name.lexeme) {
                 *old_value = value.clone();
                 return Ok(value);
             }
         }
-        Err(IntResult::Error {
+        Err(IntError::Error {
             message: format!("Undefined variable `{}`.", name.lexeme),
             token: Some(name.clone()),
         })

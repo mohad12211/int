@@ -1,12 +1,12 @@
 use token::Token;
 
-pub mod ast_printer;
 pub mod environment;
 pub mod expression;
 pub mod functions;
 pub mod interpreter;
 pub mod native_functions;
 pub mod parser;
+pub mod raylib;
 pub mod scanner;
 pub mod statement;
 pub mod token;
@@ -34,7 +34,7 @@ macro_rules! generate_enum_and_functions {
 pub(crate) use generate_enum_and_functions;
 use value::Value;
 
-pub enum IntResult {
+pub enum IntError {
     Error {
         message: String,
         token: Option<Token>,
@@ -45,15 +45,14 @@ pub enum IntResult {
 }
 
 trait WithToken<T> {
-    fn with_token(self, token: impl AsRef<Token>) -> Result<T, IntResult>;
+    fn with_token(self, token: impl AsRef<Token>) -> Result<T, IntError>;
 }
 
 impl<T> WithToken<T> for Result<T, String> {
-    fn with_token(self, token: impl AsRef<Token>) -> Result<T, IntResult> {
-        self.map_err(|msg| IntResult::Error {
+    fn with_token(self, token: impl AsRef<Token>) -> Result<T, IntError> {
+        self.map_err(|msg| IntError::Error {
             message: msg,
             token: Some(token.as_ref().clone()),
         })
     }
 }
-//

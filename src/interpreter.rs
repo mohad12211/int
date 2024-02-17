@@ -1,8 +1,18 @@
 use std::{collections::HashMap, iter::once, mem, rc::Rc};
 
 use crate::{
-    environment::Environment, expression::Expr, functions::Callable, native_functions::NativeClock,
-    statement::Stmt, token::TokenKind, value::Value, IntResult, WithToken,
+    environment::Environment,
+    expression::Expr,
+    functions::Callable,
+    native_functions::NativeClock,
+    raylib::{
+        BeginDrawing, ClearBackground, DrawFPS, DrawRectangle, DrawText, EndDrawing, GetFrameTime,
+        InitWindow, SetTargetFPS, WindowShouldClose,
+    },
+    statement::Stmt,
+    token::TokenKind,
+    value::Value,
+    IntError, WithToken,
 };
 
 pub struct Interpreter {
@@ -19,6 +29,66 @@ impl Default for Interpreter {
                 fun: Rc::new(NativeClock),
             }),
         );
+        globals.insert(
+            "InitWindow".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(InitWindow),
+            }),
+        );
+        globals.insert(
+            "WindowShouldClose".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(WindowShouldClose),
+            }),
+        );
+        globals.insert(
+            "BeginDrawing".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(BeginDrawing),
+            }),
+        );
+        globals.insert(
+            "EndDrawing".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(EndDrawing),
+            }),
+        );
+        globals.insert(
+            "ClearBackground".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(ClearBackground),
+            }),
+        );
+        globals.insert(
+            "DrawText".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(DrawText),
+            }),
+        );
+        globals.insert(
+            "SetTargetFPS".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(SetTargetFPS),
+            }),
+        );
+        globals.insert(
+            "DrawRectangle".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(DrawRectangle),
+            }),
+        );
+        globals.insert(
+            "GetFrameTime".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(GetFrameTime),
+            }),
+        );
+        globals.insert(
+            "DrawFPS".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(DrawFPS),
+            }),
+        );
         Self {
             environments: vec![globals],
             environment: Environment::new(vec![0]),
@@ -27,7 +97,7 @@ impl Default for Interpreter {
 }
 
 impl Interpreter {
-    fn evalute(&mut self, expression: &Expr) -> Result<Value, IntResult> {
+    fn evalute(&mut self, expression: &Expr) -> Result<Value, IntError> {
         match expression {
             Expr::Unary { operator, right } => {
                 let right = self.evalute(right)?;
@@ -71,7 +141,7 @@ impl Interpreter {
                         (Value::Double(left), Value::Double(right)) => {
                             Ok(Value::Double(left + right))
                         }
-                        _ => Err(IntResult::Error {
+                        _ => Err(IntError::Error {
                             message: "One of the operands must be a string and a double".into(),
                             token: Some(operator.as_ref().clone()),
                         }),
@@ -140,7 +210,7 @@ impl Interpreter {
 
                 let fun = callee.fun().with_token(paren)?;
                 if fun.fun.arity() != arguments.len() {
-                    return Err(IntResult::Error {
+                    return Err(IntError::Error {
                         message: format!(
                             "Expected {} arguments, got {}",
                             arguments.len(),
@@ -165,7 +235,7 @@ impl Interpreter {
         }
     }
 
-    fn execute(&mut self, statement: &Stmt) -> Result<(), IntResult> {
+    fn execute(&mut self, statement: &Stmt) -> Result<(), IntError> {
         match statement {
             Stmt::Print { expression } => {
                 let value = self.evalute(expression)?;
@@ -199,7 +269,7 @@ impl Interpreter {
                 while self.evalute(condition)?.is_truthy() {
                     match self.execute(body) {
                         Ok(()) => {}
-                        Err(IntResult::Break(_)) => return Ok(()),
+                        Err(IntError::Break(_)) => return Ok(()),
                         Err(e) => return Err(e),
                     }
                 }
@@ -217,12 +287,12 @@ impl Interpreter {
             }
             Stmt::Return { keyword, value } => {
                 let return_value = self.evalute(value)?;
-                Err(IntResult::ReturnValue(
+                Err(IntError::ReturnValue(
                     return_value,
                     (keyword.as_ref()).clone(),
                 ))
             }
-            Stmt::Break { keyword } => Err(IntResult::Break(keyword.as_ref().clone())),
+            Stmt::Break { keyword } => Err(IntError::Break(keyword.as_ref().clone())),
             Stmt::For {
                 initializer,
                 condition,
@@ -235,8 +305,8 @@ impl Interpreter {
                 while self.evalute(condition)?.is_truthy() {
                     match self.execute(body) {
                         Ok(_) => {}
-                        Err(IntResult::Break(_)) => return Ok(()),
-                        Err(IntResult::Continue(_)) => {}
+                        Err(IntError::Break(_)) => return Ok(()),
+                        Err(IntError::Continue(_)) => {}
                         Err(err) => return Err(err),
                     }
 
@@ -246,7 +316,7 @@ impl Interpreter {
                 }
                 Ok(())
             }
-            Stmt::Continue { keyword } => Err(IntResult::Continue(keyword.as_ref().clone())),
+            Stmt::Continue { keyword } => Err(IntError::Continue(keyword.as_ref().clone())),
         }
     }
 
@@ -254,14 +324,14 @@ impl Interpreter {
         for statement in statements {
             match self.execute(statement) {
                 Ok(()) => {}
-                Err(IntResult::ReturnValue(_, keyword)) => {
+                Err(IntError::ReturnValue(_, keyword)) => {
                     println!(
                         "Error interpreting: Top level return is not allowed. At line: {}",
                         keyword.line
                     );
                     return;
                 }
-                Err(IntResult::Error { message, token }) => {
+                Err(IntError::Error { message, token }) => {
                     match token {
                         Some(token) => println!(
                             "Error interpreting `{}` at line {}: {}",
@@ -270,14 +340,14 @@ impl Interpreter {
                         None => println!("Error interpreting `{}`", message),
                     };
                 }
-                Err(IntResult::Break(keyword)) => {
+                Err(IntError::Break(keyword)) => {
                     println!(
                         "Error interpreting: break is only allowed in loops. At line: {}",
                         keyword.line
                     );
                     return;
                 }
-                Err(IntResult::Continue(keyword)) => {
+                Err(IntError::Continue(keyword)) => {
                     println!(
                         "Error interpreting: continue is only allowed in loops. At line: {}",
                         keyword.line
@@ -293,7 +363,7 @@ impl Interpreter {
         statements: &[Stmt],
         enclosing_ids: &[usize],
         values: HashMap<String, Value>,
-    ) -> Result<(), IntResult> {
+    ) -> Result<(), IntError> {
         self.environments.push(values);
         let mut environment = Environment::new(
             enclosing_ids

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Debug, rc::Rc};
 
-use crate::{interpreter::Interpreter, statement::Stmt, token::Token, value::Value, IntResult};
+use crate::{interpreter::Interpreter, statement::Stmt, token::Token, value::Value, IntError};
 
 #[derive(Clone)]
 pub struct Callable {
@@ -22,11 +22,8 @@ impl Debug for Callable {
 pub trait IntCallable {
     fn arity(&self) -> usize;
     fn name(&self) -> String;
-    fn call(
-        &self,
-        interpreter: &mut Interpreter,
-        arguments: Vec<Value>,
-    ) -> Result<Value, IntResult>;
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>)
+        -> Result<Value, IntError>;
 }
 
 #[derive(Clone, Debug)]
@@ -55,20 +52,20 @@ impl IntCallable for Function {
         &self,
         interpreter: &mut Interpreter,
         arguments: Vec<Value>,
-    ) -> Result<Value, IntResult> {
+    ) -> Result<Value, IntError> {
         let mut values = HashMap::new();
         for (token, argument) in self.params.clone().into_iter().zip(arguments) {
             values.insert(token.lexeme, argument);
         }
         match interpreter.execute_block(&self.body, &[0], values) {
             Ok(()) => Ok(Value::Nil),
-            Err(IntResult::ReturnValue(value, _)) => Ok(value),
-            Err(err @ IntResult::Error { .. }) => Err(err),
-            Err(IntResult::Break(keyword)) => Err(IntResult::Error {
+            Err(IntError::ReturnValue(value, _)) => Ok(value),
+            Err(err @ IntError::Error { .. }) => Err(err),
+            Err(IntError::Break(keyword)) => Err(IntError::Error {
                 message: "break is only allowed in loops.".into(),
                 token: Some(keyword),
             }),
-            Err(IntResult::Continue(keyword)) => Err(IntResult::Error {
+            Err(IntError::Continue(keyword)) => Err(IntError::Error {
                 message: "continue is only allowed in loops.".into(),
                 token: Some(keyword),
             }),

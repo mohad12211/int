@@ -8,7 +8,7 @@ use crate::{
     },
     token::{Token, TokenKind},
     value::Value,
-    IntResult,
+    IntError,
 };
 
 pub struct Parser {
@@ -49,7 +49,7 @@ impl Parser {
             let statement = self.declaration();
             match statement {
                 Ok(statement) => self.statements.push(statement),
-                Err(IntResult::Error { message, token }) => {
+                Err(IntError::Error { message, token }) => {
                     result = Err(());
                     self.syncronize();
                     match token {
@@ -60,9 +60,7 @@ impl Parser {
                         None => println!("{message}"),
                     }
                 }
-                Err(
-                    IntResult::ReturnValue(_, _) | IntResult::Break(_) | IntResult::Continue(_),
-                ) => {
+                Err(IntError::ReturnValue(_, _) | IntError::Break(_) | IntError::Continue(_)) => {
                     unreachable!(
                         "return/break/continue are only invoked while intepreting, not parsing"
                     )
@@ -72,7 +70,7 @@ impl Parser {
         result
     }
 
-    fn declaration(&mut self) -> Result<Stmt, IntResult> {
+    fn declaration(&mut self) -> Result<Stmt, IntError> {
         if self.match_token(TokenKind::Fun) {
             self.function("function")
         } else if self.match_token(TokenKind::Var) {
@@ -82,7 +80,7 @@ impl Parser {
         }
     }
 
-    fn function(&mut self, kind: &str) -> Result<Stmt, IntResult> {
+    fn function(&mut self, kind: &str) -> Result<Stmt, IntError> {
         let name = self.consume(TokenKind::Identifier, &format!("Expected {kind} name."))?;
         self.consume(
             TokenKind::LeftParen,
@@ -114,7 +112,7 @@ impl Parser {
         Ok(Function(Function::new(name, parameters, body)))
     }
 
-    fn var_declaration(&mut self) -> Result<Stmt, IntResult> {
+    fn var_declaration(&mut self) -> Result<Stmt, IntError> {
         let name = self.consume(TokenKind::Identifier, "Expected a variable name")?;
 
         let mut initializer = Literal(Value::Nil);
@@ -130,7 +128,7 @@ impl Parser {
         Ok(Var(initializer, name))
     }
 
-    fn statement(&mut self) -> Result<Stmt, IntResult> {
+    fn statement(&mut self) -> Result<Stmt, IntError> {
         if self.match_token(TokenKind::For) {
             return self.for_statement();
         }
@@ -159,17 +157,17 @@ impl Parser {
         self.expression_statement()
     }
 
-    fn break_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
+    fn break_statement(&mut self, keyword: Token) -> Result<Stmt, IntError> {
         self.consume(TokenKind::Semicolon, "Expected `;` after break.")?;
         Ok(Break(keyword))
     }
 
-    fn continue_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
+    fn continue_statement(&mut self, keyword: Token) -> Result<Stmt, IntError> {
         self.consume(TokenKind::Semicolon, "Expected `;` after continue.")?;
         Ok(Continue(keyword))
     }
 
-    fn return_statement(&mut self, keyword: Token) -> Result<Stmt, IntResult> {
+    fn return_statement(&mut self, keyword: Token) -> Result<Stmt, IntError> {
         if self.match_token(TokenKind::Semicolon) {
             return Ok(Return(keyword, Literal(Value::Nil)));
         }
@@ -178,7 +176,7 @@ impl Parser {
         Ok(Return(keyword, value))
     }
 
-    fn for_statement(&mut self) -> Result<Stmt, IntResult> {
+    fn for_statement(&mut self) -> Result<Stmt, IntError> {
         self.consume(TokenKind::LeftParen, "Expected `(` after 'for'.")?;
         let initializer = if self.match_token(TokenKind::Semicolon) {
             None
@@ -216,7 +214,7 @@ impl Parser {
         Ok(Block(vec![For(initializer, condition, increment, body)]))
     }
 
-    fn while_statement(&mut self) -> Result<Stmt, IntResult> {
+    fn while_statement(&mut self) -> Result<Stmt, IntError> {
         self.consume(TokenKind::LeftParen, "Expected `(` after `while`.")?;
         let condition = self.expression()?;
         self.consume(TokenKind::RightParen, "Expected `(` after condition.")?;
@@ -225,7 +223,7 @@ impl Parser {
         Ok(While(condition, body))
     }
 
-    fn if_statement(&mut self) -> Result<Stmt, IntResult> {
+    fn if_statement(&mut self) -> Result<Stmt, IntError> {
         self.consume(TokenKind::LeftParen, "Expected `(` after `if`.")?;
         let condition = self.expression()?;
         self.consume(TokenKind::RightParen, "Expected `)` after `if` condition.")?;
@@ -239,7 +237,7 @@ impl Parser {
         Ok(If(condition, then_branch, else_branch))
     }
 
-    fn block(&mut self) -> Result<Vec<Stmt>, IntResult> {
+    fn block(&mut self) -> Result<Vec<Stmt>, IntError> {
         let mut statements = Vec::new();
 
         while let Some(token) = self.tokens.get(self.current) {
@@ -254,23 +252,23 @@ impl Parser {
         Ok(statements)
     }
 
-    fn print_statement(&mut self) -> Result<Stmt, IntResult> {
+    fn print_statement(&mut self) -> Result<Stmt, IntError> {
         let value = self.expression()?;
         self.consume(TokenKind::Semicolon, "Expected `;` after value.")?;
         Ok(Print(value))
     }
 
-    fn expression_statement(&mut self) -> Result<Stmt, IntResult> {
+    fn expression_statement(&mut self) -> Result<Stmt, IntError> {
         let expr = self.expression()?;
         self.consume(TokenKind::Semicolon, "Expected `;` after value.")?;
         Ok(Expression(expr))
     }
 
-    fn expression(&mut self) -> Result<Expr, IntResult> {
+    fn expression(&mut self) -> Result<Expr, IntError> {
         self.comma()
     }
 
-    fn comma(&mut self) -> Result<Expr, IntResult> {
+    fn comma(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.assignment()?;
 
         match_token!(self, while operator TokenKind::Comma, {
@@ -281,7 +279,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn assignment(&mut self) -> Result<Expr, IntResult> {
+    fn assignment(&mut self) -> Result<Expr, IntError> {
         let left = self.ternary()?;
 
         match_token!(self, if equals TokenKind::Equal, {
@@ -289,14 +287,14 @@ impl Parser {
             if let Expr::Variable { name } = left {
                 return Ok(Assign(*name, value));
             } else {
-                return Err(IntResult::Error { message: "Invalid assignment target".into(), token: Some(equals) });
+                return Err(IntError::Error { message: "Invalid assignment target".into(), token: Some(equals) });
             }
         });
 
         Ok(left)
     }
 
-    fn ternary(&mut self) -> Result<Expr, IntResult> {
+    fn ternary(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.or()?;
         if self.match_token(TokenKind::Question) {
             let then_branch = self.expression()?;
@@ -308,7 +306,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn or(&mut self) -> Result<Expr, IntResult> {
+    fn or(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.and()?;
         match_token!(self, while operator TokenKind::Or, {
             let right = self.and()?;
@@ -318,7 +316,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn and(&mut self) -> Result<Expr, IntResult> {
+    fn and(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.equality()?;
         match_token!(self, while operator TokenKind::And, {
             let right = self.equality()?;
@@ -328,7 +326,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn equality(&mut self) -> Result<Expr, IntResult> {
+    fn equality(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.comparison()?;
         match_token!(self, while operator TokenKind::BangEqual | TokenKind::EqualEqual, {
             let right = self.comparison()?;
@@ -337,7 +335,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, IntResult> {
+    fn comparison(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.term()?;
         match_token!(self, while operator TokenKind::Greater | TokenKind::GreaterEqual | TokenKind::Less | TokenKind::LessEqual , {
             let right = self.term()?;
@@ -346,7 +344,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, IntResult> {
+    fn term(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.factor()?;
         match_token!(self, while operator TokenKind::Minus | TokenKind::Plus, {
             let right = self.factor()?;
@@ -355,7 +353,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, IntResult> {
+    fn factor(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.unary()?;
         match_token!(self, while operator TokenKind::Slash | TokenKind::Star, {
             let right = self.unary()?;
@@ -364,7 +362,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, IntResult> {
+    fn unary(&mut self) -> Result<Expr, IntError> {
         match_token!(self, if operator TokenKind::Bang | TokenKind::Minus, {
             let right = self.unary()?;
             return Ok(Unary(operator, right));
@@ -372,7 +370,7 @@ impl Parser {
         self.call()
     }
 
-    fn call(&mut self) -> Result<Expr, IntResult> {
+    fn call(&mut self) -> Result<Expr, IntError> {
         let mut expr = self.primary()?;
 
         loop {
@@ -386,7 +384,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn finish_call(&mut self, callee: Expr) -> Result<Expr, IntResult> {
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, IntError> {
         let mut arguments = Vec::new();
         if let Some(token) = self.tokens.get(self.current) {
             if token.kind != TokenKind::RightParen {
@@ -405,7 +403,7 @@ impl Parser {
         Ok(Call(callee, paren, arguments))
     }
 
-    fn primary(&mut self) -> Result<Expr, IntResult> {
+    fn primary(&mut self) -> Result<Expr, IntError> {
         if self.match_token(TokenKind::False) {
             return Ok(Literal(Value::Bool(false)));
         }
@@ -427,19 +425,19 @@ impl Parser {
             return Ok(Grouping(expr));
         }
 
-        Err(IntResult::Error {
+        Err(IntError::Error {
             message: "Expected Expression".into(),
             token: self.tokens.get(self.current).cloned(),
         })
     }
 
-    fn consume(&mut self, kind: TokenKind, message: &str) -> Result<Token, IntResult> {
+    fn consume(&mut self, kind: TokenKind, message: &str) -> Result<Token, IntError> {
         let token = self.tokens.get(self.current).unwrap().clone();
         if token.kind == kind {
             self.current += 1;
             Ok(token)
         } else {
-            Err(IntResult::Error {
+            Err(IntError::Error {
                 message: message.into(),
                 token: Some(token),
             })
