@@ -235,7 +235,7 @@ impl Interpreter {
             Expr::Struct { fields } => {
                 let mut map = HashMap::new();
                 for (token, expr) in fields.as_ref() {
-                    let value = self.evalute(&expr)?;
+                    let value = self.evalute(expr)?;
                     map.insert(token.lexeme.clone(), value);
                 }
                 Ok(Value::Struct(Rc::new(RefCell::new(map))))

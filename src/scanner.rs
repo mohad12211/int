@@ -114,10 +114,7 @@ impl Scanner {
     }
 
     fn consume_hex_literal(&mut self) {
-        while self
-            .peek()
-            .is_some_and(|c| matches!(c, '0'..='9' | 'A'..='F' | 'a'..='f'))
-        {
+        while self.peek().is_some_and(|c| c.is_ascii_hexdigit()) {
             self.consume();
         }
 
