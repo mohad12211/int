@@ -468,7 +468,7 @@ impl Parser {
 
         self.consume(
             TokenKind::RightBracket,
-            "Unmatched delimiter: Expected `}` after struct",
+            "Unmatched delimiter: Expected `]` after array",
         )?;
 
         Ok(elements)

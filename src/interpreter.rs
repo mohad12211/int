@@ -426,6 +426,7 @@ impl Interpreter {
                         ),
                         None => println!("Error interpreting `{}`", message),
                     };
+                    return;
                 }
                 Err(IntError::Break(keyword)) => {
                     println!(
