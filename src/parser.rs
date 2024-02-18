@@ -1,6 +1,7 @@
 use crate::{
     expression::{
-        Assign, Binary, Call, Expr, Grouping, Literal, Logical, Struct, Ternary, Unary, Variable,
+        Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Struct, Ternary, Unary,
+        Variable,
     },
     functions::Function,
     statement::{
@@ -286,9 +287,13 @@ impl Parser {
             let value = self.assignment()?;
             if let Expr::Variable { name } = left {
                 return Ok(Assign(*name, value));
-            } else {
-                return Err(IntError::Error { message: "Invalid assignment target".into(), token: Some(equals) });
             }
+
+            if let Expr::Get { target, name } = left {
+                return Ok(Set(*target, *name, value));
+            }
+
+            return Err(IntError::Error { message: "Invalid assignment target".into(), token: Some(equals) });
         });
 
         Ok(left)
@@ -376,6 +381,12 @@ impl Parser {
         loop {
             if self.match_token(TokenKind::LeftParen) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(TokenKind::Dot) {
+                let name = self.consume(
+                    TokenKind::Identifier,
+                    "Expected struct field name after `.`.",
+                )?;
+                expr = Get(expr, name);
             } else {
                 break;
             }

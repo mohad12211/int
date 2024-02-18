@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 use crate::functions::Callable;
 
@@ -9,7 +9,7 @@ pub enum Value {
     Bool(bool),
     Nil,
     Fun(Callable),
-    Struct(HashMap<String, Value>),
+    Struct(Rc<RefCell<HashMap<String, Value>>>),
 }
 
 impl Display for Value {

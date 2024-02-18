@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::once, mem, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, iter::once, mem, rc::Rc};
 
 use crate::{
     environment::Environment,
@@ -238,7 +238,42 @@ impl Interpreter {
                     let value = self.evalute(&expr)?;
                     map.insert(token.lexeme.clone(), value);
                 }
-                Ok(Value::Struct(map))
+                Ok(Value::Struct(Rc::new(RefCell::new(map))))
+            }
+            Expr::Get { target, name } => {
+                let value = self.evalute(target)?;
+                let Value::Struct(map) = value else {
+                    return Err(IntError::Error {
+                        message: "Only structs have fields.".into(),
+                        token: Some((name.as_ref()).clone()),
+                    });
+                };
+                let map = map.borrow();
+                let Some(value) = map.get(&name.as_ref().lexeme) else {
+                    return Err(IntError::Error {
+                        message: format!("Undefined property: `{}`.", name.as_ref().lexeme),
+                        token: Some((name.as_ref()).clone()),
+                    });
+                };
+                // FIX: this clone is so ugly
+                Ok(value.clone())
+            }
+            Expr::Set {
+                target,
+                name,
+                value,
+            } => {
+                let target = self.evalute(target)?;
+                let Value::Struct(map) = target else {
+                    return Err(IntError::Error {
+                        message: "Only structs have fields.".into(),
+                        token: Some((name.as_ref()).clone()),
+                    });
+                };
+                let value = self.evalute(value)?;
+                map.borrow_mut()
+                    .insert(name.as_ref().lexeme.clone(), value.clone());
+                Ok(value)
             }
         }
     }
