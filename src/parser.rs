@@ -1,7 +1,7 @@
 use crate::{
     expression::{
-        Array, Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Struct, Ternary,
-        Unary, Variable,
+        Array, Assign, Binary, Call, Expr, Get, Grouping, Index, Literal, Logical, Set, Struct,
+        Ternary, Unary, Variable,
     },
     functions::Function,
     statement::{
@@ -401,12 +401,20 @@ impl Parser {
                     "Expected struct field name after `.`.",
                 )?;
                 expr = Get(expr, name);
+            } else if self.match_token(TokenKind::LeftBracket) {
+                expr = self.finish_index(expr)?;
             } else {
                 break;
             }
         }
 
         Ok(expr)
+    }
+
+    fn finish_index(&mut self, array: Expr) -> Result<Expr, IntError> {
+        let index = self.expression()?;
+        let bracket = self.consume(TokenKind::RightBracket, "Expected `]` after array index.")?;
+        Ok(Index(array, bracket, index))
     }
 
     fn finish_call(&mut self, callee: Expr) -> Result<Expr, IntError> {

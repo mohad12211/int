@@ -47,6 +47,11 @@ generate_enum_and_functions! {
         Array {
             elements: Vec<Expr>
         },
+        Index {
+            array: Expr,
+            bracket: Token,
+            index: Expr,
+        },
         Get {
             target: Expr,
             name: Token,

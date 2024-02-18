@@ -288,7 +288,7 @@ impl Interpreter {
                 let map = map.borrow();
                 let Some(value) = map.get(&name.as_ref().lexeme) else {
                     return Err(IntError::Error {
-                        message: format!("Undefined property: `{}`.", name.as_ref().lexeme),
+                        message: format!("Undefined field: `{}`.", name.as_ref().lexeme),
                         token: Some((name.as_ref()).clone()),
                     });
                 };
@@ -318,6 +318,25 @@ impl Interpreter {
                     vec.push(value);
                 }
                 Ok(Value::Array(Rc::new(RefCell::new(vec))))
+            }
+            Expr::Index {
+                array,
+                bracket,
+                index,
+            } => {
+                let array = self.evalute(array)?;
+                let array = array.array().with_token(bracket)?.borrow();
+                let index = self.evalute(index)?.double().with_token(bracket)? as usize;
+                let Some(value) = array.get(index) else {
+                    return Err(IntError::Error {
+                        message: format!(
+                            "index `{index}` is out of bound `{size}`",
+                            size = array.len()
+                        ),
+                        token: Some(bracket.as_ref().clone()),
+                    });
+                };
+                Ok(value.clone())
             }
         }
     }
