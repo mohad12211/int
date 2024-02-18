@@ -404,6 +404,17 @@ impl Interpreter {
                 Ok(())
             }
             Stmt::Continue { keyword } => Err(IntError::Continue(keyword.as_ref().clone())),
+            Stmt::Append {
+                paren,
+                array,
+                expression,
+            } => {
+                let array = self.evalute(array)?;
+                let expression = self.evalute(expression)?;
+                let vec = array.array().with_token(paren)?;
+                vec.borrow_mut().push(expression);
+                Ok(())
+            }
         }
     }
 

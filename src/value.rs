@@ -23,8 +23,8 @@ impl Display for Value {
             Value::Nil => write!(f, "nil"),
             Value::Fun(fun) => write!(f, "{}", fun.fun.name()),
             // TODO: remove debug print
-            Value::Struct(map) => write!(f, "{:?}", map),
-            Value::Array(vec) => write!(f, "{:?}", vec),
+            Value::Struct(map) => write!(f, "{:?}", map.borrow()),
+            Value::Array(vec) => write!(f, "{:?}", vec.borrow()),
         }
     }
 }

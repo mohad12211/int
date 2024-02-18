@@ -5,7 +5,8 @@ use crate::{
     },
     functions::Function,
     statement::{
-        Block, Break, Continue, Expression, For, Function, If, Print, Return, Stmt, Var, While,
+        Append, Block, Break, Continue, Expression, For, Function, If, Print, Return, Stmt, Var,
+        While,
     },
     token::{Token, TokenKind},
     value::Value,
@@ -151,11 +152,24 @@ impl Parser {
         if self.match_token(TokenKind::While) {
             return self.while_statement();
         }
+        if self.match_token(TokenKind::Append) {
+            return self.append_statement();
+        }
         if self.match_token(TokenKind::LeftBrace) {
             return Ok(Block(self.block()?));
         }
 
         self.expression_statement()
+    }
+
+    fn append_statement(&mut self) -> Result<Stmt, IntError> {
+        let paren = self.consume(TokenKind::LeftParen, "Expected `(` after append.")?;
+        let array = self.assignment()?;
+        self.consume(TokenKind::Comma, "Expected `,` after array")?;
+        let expression = self.assignment()?;
+        self.consume(TokenKind::RightParen, "Expected `)` after append.")?;
+        self.consume(TokenKind::Semicolon, "Expected `;` after append.")?;
+        Ok(Append(paren, array, expression))
     }
 
     fn break_statement(&mut self, keyword: Token) -> Result<Stmt, IntError> {

@@ -239,6 +239,7 @@ impl Scanner {
             "while" => Some(While),
             "break" => Some(Break),
             "continue" => Some(Continue),
+            "append" => Some(Append),
             _ => None,
         }
     }

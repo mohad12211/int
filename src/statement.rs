@@ -43,6 +43,11 @@ generate_enum_and_functions! {
         While {
             condition: Expr,
             body: Stmt,
+        },
+        Append {
+            paren: Token,
+            array: Expr,
+            expression: Expr,
         }
     }
 }
