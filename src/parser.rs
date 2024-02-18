@@ -1,7 +1,7 @@
 use crate::{
     expression::{
-        Array, Assign, Binary, Call, Expr, Get, Grouping, Index, Literal, Logical, Set, Struct,
-        Ternary, Unary, Variable,
+        Array, Assign, Binary, Call, Expr, Grouping, IndexGet, IndexSet, Literal, Logical, Struct,
+        StructGet, StructSet, Ternary, Unary, Variable,
     },
     functions::Function,
     statement::{
@@ -303,8 +303,12 @@ impl Parser {
                 return Ok(Assign(*name, value));
             }
 
-            if let Expr::Get { target, name } = left {
-                return Ok(Set(*target, *name, value));
+            if let Expr::StructGet { target, name } = left {
+                return Ok(StructSet(*target, *name, value));
+            }
+
+            if let Expr::IndexGet { array, bracket, index } = left {
+                return Ok(IndexSet(*array, *bracket, *index, value));
             }
 
             return Err(IntError::Error { message: "Invalid assignment target".into(), token: Some(equals) });
@@ -400,7 +404,7 @@ impl Parser {
                     TokenKind::Identifier,
                     "Expected struct field name after `.`.",
                 )?;
-                expr = Get(expr, name);
+                expr = StructGet(expr, name);
             } else if self.match_token(TokenKind::LeftBracket) {
                 expr = self.finish_index(expr)?;
             } else {
@@ -414,7 +418,7 @@ impl Parser {
     fn finish_index(&mut self, array: Expr) -> Result<Expr, IntError> {
         let index = self.expression()?;
         let bracket = self.consume(TokenKind::RightBracket, "Expected `]` after array index.")?;
-        Ok(Index(array, bracket, index))
+        Ok(IndexGet(array, bracket, index))
     }
 
     fn finish_call(&mut self, callee: Expr) -> Result<Expr, IntError> {

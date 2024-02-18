@@ -277,7 +277,7 @@ impl Interpreter {
                 }
                 Ok(Value::Struct(Rc::new(RefCell::new(map))))
             }
-            Expr::Get { target, name } => {
+            Expr::StructGet { target, name } => {
                 let value = self.evalute(target)?;
                 let Value::Struct(map) = value else {
                     return Err(IntError::Error {
@@ -294,7 +294,7 @@ impl Interpreter {
                 };
                 Ok(value.clone())
             }
-            Expr::Set {
+            Expr::StructSet {
                 target,
                 name,
                 value,
@@ -319,7 +319,7 @@ impl Interpreter {
                 }
                 Ok(Value::Array(Rc::new(RefCell::new(vec))))
             }
-            Expr::Index {
+            Expr::IndexGet {
                 array,
                 bracket,
                 index,
@@ -337,6 +337,28 @@ impl Interpreter {
                     });
                 };
                 Ok(value.clone())
+            }
+            Expr::IndexSet {
+                array,
+                bracket,
+                index,
+                value,
+            } => {
+                let array = self.evalute(array)?;
+                let mut array = array.array().with_token(bracket)?.borrow_mut();
+                let index = self.evalute(index)?.double().with_token(bracket)? as usize;
+                let value = self.evalute(value)?;
+                let Some(old_value) = array.get_mut(index) else {
+                    return Err(IntError::Error {
+                        message: format!(
+                            "index `{index}` is out of bound `{size}`",
+                            size = array.len()
+                        ),
+                        token: Some(bracket.as_ref().clone()),
+                    });
+                };
+                *old_value = value.clone();
+                Ok(value)
             }
         }
     }

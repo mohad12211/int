@@ -47,16 +47,22 @@ generate_enum_and_functions! {
         Array {
             elements: Vec<Expr>
         },
-        Index {
+        IndexGet {
             array: Expr,
             bracket: Token,
             index: Expr,
         },
-        Get {
+        IndexSet {
+            array: Expr,
+            bracket: Token,
+            index: Expr,
+            value: Expr,
+        },
+        StructGet {
             target: Expr,
             name: Token,
         },
-        Set {
+        StructSet {
             target: Expr,
             name: Token,
             value: Expr,
