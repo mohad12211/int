@@ -128,7 +128,7 @@ impl Scanner {
     }
 
     fn consume_identifer(&mut self) {
-        while self.peek().is_some_and(|c| c.is_alphanumeric()) {
+        while self.peek().is_some_and(|c| c.is_alphanumeric() || c == '_') {
             self.consume();
         }
         let text = self.source[self.start..self.current]

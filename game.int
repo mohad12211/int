@@ -1,15 +1,13 @@
 var width = 1000;
 var height = 900;
-var paddleHeight = 100;
-var paddleWidth = 25;
-var margin = 25;
 var ballLen = 25;
+var paddleSpeed = 500;
 
-var p1y = (height - paddleHeight) / 2;
-var p2y = (height - paddleHeight) / 2;
+var paddle1 = {x: 25, y: (height - 100) / 2, width: 25, height: 100 };
+var paddle2 = {x: width - 25 - 25, y: (height - 100) / 2, width: 25, height: 100 };
 
-var ballPos = {x: width/2, y: height/2};
-var ballVel = {x: 200, y: 0};
+var ball = {x: width/2, y: height/2, width: ballLen, height: ballLen};
+var ballVel = {x: -400, y: 0};
 
 var WHITE = 0xFFFFFFFF;
 var BLACK = 0xFF000000;
@@ -18,14 +16,40 @@ InitWindow(width, height, "Hello from int");
 SetTargetFPS(144);
 
 while (!WindowShouldClose()) {
-  ballPos.x = ballPos.x + ballVel.x * GetFrameTime();
-  ballPos.y = ballPos.y + ballVel.y * GetFrameTime();
+  ball.x = ball.x + ballVel.x * GetFrameTime();
+  var newY = ball.y + ballVel.y * GetFrameTime();
+
+  if (newY > height - ballLen or newY < 0) {
+    ballVel.y = -ballVel.y;
+  } else {
+    ball.y = newY;
+  }
+
+  if (IsKeyDown(KEY_S)) {
+    paddle1.y = paddle1.y + paddleSpeed * GetFrameTime();
+  }
+
+  if (IsKeyDown(KEY_W)) {
+    paddle1.y = paddle1.y - paddleSpeed * GetFrameTime();
+  }
+
+  if (IsKeyDown(KEY_DOWN)) {
+    paddle2.y = paddle2.y + paddleSpeed * GetFrameTime();
+  }
+
+  if (IsKeyDown(KEY_UP)) {
+    paddle2.y = paddle2.y - paddleSpeed * GetFrameTime();
+  }
+  
+  if (CheckCollisionRecs(ball, paddle2) or CheckCollisionRecs(ball, paddle1)) {
+    ballVel.x = -ballVel.x;
+  }
 
   BeginDrawing();
   ClearBackground(BLACK);
-  DrawRectangle(margin, p1y, paddleWidth, paddleHeight, WHITE);
-  DrawRectangle(width - paddleWidth - margin, p2y, paddleWidth, paddleHeight, WHITE);
-  DrawRectangle(ballPos.x, ballPos.y, ballLen, ballLen, WHITE);
+  DrawRectangleRec(paddle1, WHITE);
+  DrawRectangleRec(paddle2, WHITE);
+  DrawRectangleRec(ball, WHITE);
   DrawFPS(5, 5);
   EndDrawing();
 }

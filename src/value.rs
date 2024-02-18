@@ -48,7 +48,14 @@ impl Value {
     pub fn fun(self) -> Result<Callable, String> {
         match self {
             Value::Fun(f) => Ok(f),
-            _ => Err("Operand must be a function or a class".into()),
+            _ => Err("Operand must be a function".into()),
+        }
+    }
+
+    pub fn structure(&self) -> Result<&RefCell<HashMap<String, Value>>, String> {
+        match self {
+            Value::Struct(map) => Ok(map.as_ref()),
+            _ => Err("Operand must be a struct".into()),
         }
     }
 }

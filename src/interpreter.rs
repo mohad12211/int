@@ -6,8 +6,9 @@ use crate::{
     functions::Callable,
     native_functions::NativeClock,
     raylib::{
-        BeginDrawing, ClearBackground, DrawFPS, DrawRectangle, DrawText, EndDrawing, GetFrameTime,
-        InitWindow, SetTargetFPS, WindowShouldClose,
+        BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
+        DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow, IsKeyDown, KeyboardKey,
+        SetTargetFPS, WindowShouldClose,
     },
     statement::Stmt,
     token::TokenKind,
@@ -78,6 +79,12 @@ impl Default for Interpreter {
             }),
         );
         globals.insert(
+            "DrawRectangleRec".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(DrawRectangleRec),
+            }),
+        );
+        globals.insert(
             "GetFrameTime".into(),
             Value::Fun(Callable {
                 fun: Rc::new(GetFrameTime),
@@ -88,6 +95,35 @@ impl Default for Interpreter {
             Value::Fun(Callable {
                 fun: Rc::new(DrawFPS),
             }),
+        );
+        globals.insert(
+            "IsKeyDown".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(IsKeyDown),
+            }),
+        );
+        globals.insert(
+            "CheckCollisionRecs".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(CheckCollisionRecs),
+            }),
+        );
+        globals.insert(
+            "KEY_S".into(),
+            Value::Double(KeyboardKey::KEY_S as u32 as f64),
+        );
+        globals.insert(
+            "KEY_W".into(),
+            Value::Double(KeyboardKey::KEY_W as u32 as f64),
+        );
+
+        globals.insert(
+            "KEY_UP".into(),
+            Value::Double(KeyboardKey::KEY_UP as u32 as f64),
+        );
+        globals.insert(
+            "KEY_DOWN".into(),
+            Value::Double(KeyboardKey::KEY_DOWN as u32 as f64),
         );
         Self {
             environments: vec![globals],
