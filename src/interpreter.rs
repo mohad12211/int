@@ -255,7 +255,6 @@ impl Interpreter {
                         token: Some((name.as_ref()).clone()),
                     });
                 };
-                // FIX: this clone is so ugly
                 Ok(value.clone())
             }
             Expr::Set {
