@@ -7,7 +7,7 @@ var paddle1 = {x: 25, y: (height - 100) / 2, width: 25, height: 100 };
 var paddle2 = {x: width - 25 - 25, y: (height - 100) / 2, width: 25, height: 100 };
 
 var ball = {x: width/2, y: height/2, width: ballLen, height: ballLen};
-var ballVel = {x: -400, y: 0};
+var ballVel = {x: -400, y: 300};
 
 var WHITE = 0xFFFFFFFF;
 var BLACK = 0xFF000000;

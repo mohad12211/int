@@ -1,0 +1,16 @@
+var array = [1, 2];
+print array;
+
+append(array, 3);
+print array;
+
+array[0] = 60;
+print array;
+
+insert(array[3], 0);
+print array;
+
+// delete(array[1]);
+// print array;
+
+// print len(array);
