@@ -1,4 +1,5 @@
-use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
+use ahash::AHashMap as HashMap;
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use crate::functions::Callable;
 

@@ -1,4 +1,5 @@
-use std::{cell::RefCell, collections::HashMap, iter::once, mem, rc::Rc};
+use ahash::AHashMap as HashMap;
+use std::{cell::RefCell, iter::once, mem, rc::Rc};
 
 use crate::{
     environment::Environment,

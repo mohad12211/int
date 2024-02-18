@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fmt::Debug, rc::Rc};
-
 use crate::{interpreter::Interpreter, statement::Stmt, token::Token, value::Value, IntError};
+use ahash::AHashMap as HashMap;
+use std::{fmt::Debug, rc::Rc};
 
 #[derive(Clone)]
 pub struct Callable {
