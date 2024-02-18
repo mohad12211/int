@@ -5,8 +5,8 @@ use crate::{
     },
     functions::Function,
     statement::{
-        Append, Block, Break, Continue, Expression, For, Function, If, Print, Return, Stmt, Var,
-        While,
+        Append, Block, Break, Continue, Expression, For, Function, If, Insert, Print, Return, Stmt,
+        Var, While,
     },
     token::{Token, TokenKind},
     value::Value,
@@ -155,11 +155,29 @@ impl Parser {
         if self.match_token(TokenKind::Append) {
             return self.append_statement();
         }
+        if self.match_token(TokenKind::Insert) {
+            return self.insert_statement();
+        }
         if self.match_token(TokenKind::LeftBrace) {
             return Ok(Block(self.block()?));
         }
 
         self.expression_statement()
+    }
+
+    fn insert_statement(&mut self) -> Result<Stmt, IntError> {
+        let paren = self.consume(TokenKind::LeftParen, "Expected `(` after insert.")?;
+        let Expr::IndexGet { array, index, .. } = self.assignment()? else {
+            return Err(IntError::Error {
+                message: "Invalid insert target.".into(),
+                token: Some(paren.clone()),
+            });
+        };
+        self.consume(TokenKind::Comma, "Expected `,` after array")?;
+        let expression = self.assignment()?;
+        self.consume(TokenKind::RightParen, "Expected `)` after insert.")?;
+        self.consume(TokenKind::Semicolon, "Expected `;` after insert.")?;
+        Ok(Insert(paren, *array, *index, expression))
     }
 
     fn append_statement(&mut self) -> Result<Stmt, IntError> {
@@ -406,19 +424,16 @@ impl Parser {
                 )?;
                 expr = StructGet(expr, name);
             } else if self.match_token(TokenKind::LeftBracket) {
-                expr = self.finish_index(expr)?;
+                let index = self.expression()?;
+                let bracket =
+                    self.consume(TokenKind::RightBracket, "Expected `]` after array index.")?;
+                expr = IndexGet(expr, bracket, index);
             } else {
                 break;
             }
         }
 
         Ok(expr)
-    }
-
-    fn finish_index(&mut self, array: Expr) -> Result<Expr, IntError> {
-        let index = self.expression()?;
-        let bracket = self.consume(TokenKind::RightBracket, "Expected `]` after array index.")?;
-        Ok(IndexGet(array, bracket, index))
     }
 
     fn finish_call(&mut self, callee: Expr) -> Result<Expr, IntError> {

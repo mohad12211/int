@@ -55,6 +55,7 @@ pub enum TokenKind {
     Var,
     While,
     Append,
+    Insert,
 
     Eof,
 }

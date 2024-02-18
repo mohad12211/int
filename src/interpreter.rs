@@ -456,6 +456,28 @@ impl Interpreter {
                 vec.borrow_mut().push(expression);
                 Ok(())
             }
+            Stmt::Insert {
+                paren,
+                array,
+                index,
+                expression,
+            } => {
+                let array = self.evalute(array)?;
+                let expression = self.evalute(expression)?;
+                let mut vec = array.array().with_token(paren)?.borrow_mut();
+                let index = self.evalute(index)?.double().with_token(paren)? as usize;
+                if index > vec.len() {
+                    return Err(IntError::Error {
+                        message: format!(
+                            "index `{index}` is out of bound `{size}`",
+                            size = vec.len()
+                        ),
+                        token: Some(paren.as_ref().clone()),
+                    });
+                }
+                vec.insert(index, expression);
+                Ok(())
+            }
         }
     }
 

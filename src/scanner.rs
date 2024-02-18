@@ -240,6 +240,7 @@ impl Scanner {
             "break" => Some(Break),
             "continue" => Some(Continue),
             "append" => Some(Append),
+            "insert" => Some(Insert),
             _ => None,
         }
     }

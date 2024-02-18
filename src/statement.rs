@@ -48,6 +48,12 @@ generate_enum_and_functions! {
             paren: Token,
             array: Expr,
             expression: Expr,
+        },
+        Insert {
+            paren: Token,
+            array: Expr,
+            index: Expr,
+            expression: Expr,
         }
     }
 }
