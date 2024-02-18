@@ -37,6 +37,8 @@ impl Scanner {
         use TokenKind::*;
         let char = self.consume();
         match char {
+            '[' => self.add_token(LeftBracket),
+            ']' => self.add_token(RightBracket),
             '(' => self.add_token(LeftParen),
             ')' => self.add_token(RightParen),
             '{' => self.add_token(LeftBrace),

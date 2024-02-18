@@ -44,6 +44,9 @@ generate_enum_and_functions! {
         Struct {
             fields: Vec<(Token, Expr)>
         },
+        Array {
+            elements: Vec<Expr>
+        },
         Get {
             target: Expr,
             name: Token,

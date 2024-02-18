@@ -311,6 +311,14 @@ impl Interpreter {
                     .insert(name.as_ref().lexeme.clone(), value.clone());
                 Ok(value)
             }
+            Expr::Array { elements } => {
+                let mut vec = Vec::new();
+                for element in elements.as_ref() {
+                    let value = self.evalute(element)?;
+                    vec.push(value);
+                }
+                Ok(Value::Array(Rc::new(RefCell::new(vec))))
+            }
         }
     }
 
