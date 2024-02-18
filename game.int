@@ -1,0 +1,31 @@
+var width = 1000;
+var height = 900;
+var paddleHeight = 100;
+var paddleWidth = 25;
+var margin = 25;
+var ballLen = 25;
+
+var p1y = (height - paddleHeight) / 2;
+var p2y = (height - paddleHeight) / 2;
+
+var ballPos = {x: width/2, y: height/2};
+var ballVel = {x: 200, y: 0};
+
+var WHITE = 0xFFFFFFFF;
+var BLACK = 0xFF000000;
+
+InitWindow(width, height, "Hello from int");
+SetTargetFPS(144);
+
+while (!WindowShouldClose()) {
+  ballPos.x = ballPos.x + ballVel.x * GetFrameTime();
+  ballPos.y = ballPos.y + ballVel.y * GetFrameTime();
+
+  BeginDrawing();
+  ClearBackground(BLACK);
+  DrawRectangle(margin, p1y, paddleWidth, paddleHeight, WHITE);
+  DrawRectangle(width - paddleWidth - margin, p2y, paddleWidth, paddleHeight, WHITE);
+  DrawRectangle(ballPos.x, ballPos.y, ballLen, ballLen, WHITE);
+  DrawFPS(5, 5);
+  EndDrawing();
+}
