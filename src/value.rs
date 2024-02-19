@@ -24,6 +24,35 @@ pub enum Object {
     Array(Rc<RefCell<Vec<Value>>>),
 }
 
+impl Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Object::String(string) => std::fmt::Display::fmt(string.borrow().as_str(), f),
+            Object::Struct(map) => {
+                let mut fields = map
+                    .borrow()
+                    .iter()
+                    .map(|(k, v)| format!("{k}: {v}"))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                if !fields.is_empty() {
+                    fields = String::from(" ") + &fields + " ";
+                }
+                write!(f, "{{{}}}", fields)
+            }
+            Object::Array(array) => {
+                let elements = array
+                    .borrow()
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                write!(f, "[{}]", elements)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Double(f64),
@@ -36,11 +65,11 @@ pub enum Value {
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Double(d) => std::fmt::Display::fmt(&d, f),
-            Value::Bool(b) => std::fmt::Display::fmt(&b, f),
+            Value::Double(double) => std::fmt::Display::fmt(&double, f),
+            Value::Bool(bool) => std::fmt::Display::fmt(&bool, f),
             Value::Nil => write!(f, "nil"),
             // TODO: remove debug print
-            Value::Object(object) => write!(f, "{:?}", object),
+            Value::Object(object) => write!(f, "{}", object),
             Value::Fun(fun) => write!(f, "{}", fun.0.name()),
         }
     }
