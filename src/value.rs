@@ -68,8 +68,7 @@ impl Display for Value {
             Value::Double(double) => std::fmt::Display::fmt(&double, f),
             Value::Bool(bool) => std::fmt::Display::fmt(&bool, f),
             Value::Nil => write!(f, "nil"),
-            // TODO: remove debug print
-            Value::Object(object) => write!(f, "{}", object),
+            Value::Object(object) => std::fmt::Display::fmt(&object, f),
             Value::Fun(fun) => write!(f, "{}", fun.0.name()),
         }
     }

@@ -138,7 +138,7 @@ impl IntCallable for InitWindow {
         }
         let width = arguments[0].double()? as i32;
         let height = arguments[1].double()? as i32;
-        let title = CString::new(&**arguments[2].get_string()?.borrow())
+        let title = CString::new(arguments[2].get_string()?.borrow().as_str())
             .expect("You shouldn't be able to construct a string with a nullbyte");
         unsafe {
             InitWindow(width, height, title.as_ptr());
@@ -268,7 +268,7 @@ impl IntCallable for DrawText {
             fn DrawText(text: *const c_char, posX: i32, posY: i32, fontSize: i32, color: u32);
         }
         // TODO: I don't need to do that, I can just pass a refernece somehow
-        let text = CString::new(&**arguments[0].get_string()?.borrow())
+        let text = CString::new(arguments[0].get_string()?.borrow().as_str())
             .expect("You shouldn't be able to construct a string with a nullbyte");
         let pos_x = arguments[1].double()? as i32;
         let pos_y = arguments[2].double()? as i32;
