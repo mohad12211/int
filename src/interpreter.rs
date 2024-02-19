@@ -5,7 +5,7 @@ use crate::{
     environment::Environment,
     expression::Expr,
     functions::Callable,
-    native_functions::NativeClock,
+    native_functions::{ArrayLen, ArrayWithLen, NativeClock},
     raylib::{
         BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
         DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow, IsKeyDown, KeyboardKey,
@@ -29,6 +29,18 @@ impl Default for Interpreter {
             "clock".into(),
             Value::Fun(Callable {
                 fun: Rc::new(NativeClock),
+            }),
+        );
+        globals.insert(
+            "len".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(ArrayLen),
+            }),
+        );
+        globals.insert(
+            "Array".into(),
+            Value::Fun(Callable {
+                fun: Rc::new(ArrayWithLen),
             }),
         );
         globals.insert(

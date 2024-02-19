@@ -13,4 +13,7 @@ print array;
 // delete(array[1]);
 // print array;
 
-// print len(array);
+print len(array);
+
+var array2 = Array(10);
+print array2;
