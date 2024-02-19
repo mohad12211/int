@@ -38,16 +38,16 @@ impl Display for Object {
                 if !fields.is_empty() {
                     fields = String::from(" ") + &fields + " ";
                 }
-                write!(f, "{{{}}}", fields)
+                write!(f, "{{{fields}}}")
             }
             Object::Array(array) => {
                 let elements = array
                     .borrow()
                     .iter()
-                    .map(|v| v.to_string())
+                    .map(ToString::to_string)
                     .collect::<Vec<String>>()
                     .join(", ");
-                write!(f, "[{}]", elements)
+                write!(f, "[{elements}]")
             }
         }
     }

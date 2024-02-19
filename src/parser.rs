@@ -253,13 +253,6 @@ impl Parser {
         };
 
         let body = self.statement()?;
-        // if let Some(increment) = increment {
-        //     body = Block(vec![body, Expression(increment)]);
-        // }
-        // body = While(condition, body);
-        // if let Some(initializer) = initializer {
-        //     body = Block(vec![initializer, body]);
-        // }
 
         Ok(Block(vec![For(initializer, condition, increment, body)]))
     }

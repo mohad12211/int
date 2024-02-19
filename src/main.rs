@@ -22,7 +22,7 @@ pub fn main() {
 fn run_file(path: &str) {
     let mut interpreter = Interpreter::default();
     let source = fs::read_to_string(path).expect("should read file");
-    run(source, &mut interpreter);
+    run(&source, &mut interpreter);
 }
 
 fn run_prompt() {
@@ -34,11 +34,11 @@ fn run_prompt() {
         let Some(Ok(line)) = iter.next() else {
             break;
         };
-        run(line, &mut interpreter);
+        run(&line, &mut interpreter);
     }
 }
 
-fn run(source: String, interpreter: &mut Interpreter) {
+fn run(source: &str, interpreter: &mut Interpreter) {
     let tokens = Scanner::scan_tokens(source);
     let Some(statements) = Parser::parse(tokens) else {
         return;

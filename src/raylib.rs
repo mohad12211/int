@@ -267,7 +267,6 @@ impl IntCallable for DrawText {
         extern "C" {
             fn DrawText(text: *const c_char, posX: i32, posY: i32, fontSize: i32, color: u32);
         }
-        // TODO: I don't need to do that, I can just pass a refernece somehow
         let text = CString::new(arguments[0].get_string()?.borrow().as_str())
             .expect("You shouldn't be able to construct a string with a nullbyte");
         let pos_x = arguments[1].double()? as i32;

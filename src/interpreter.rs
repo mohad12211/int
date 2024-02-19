@@ -362,9 +362,8 @@ impl Interpreter {
                 }
                 while self.evalute(condition)?.is_truthy() {
                     match self.execute(body) {
-                        Ok(_) => {}
+                        Ok(()) | Err(IntError::Continue(_)) => {}
                         Err(IntError::Break(_)) => return Ok(()),
-                        Err(IntError::Continue(_)) => {}
                         Err(err) => return Err(err),
                     }
 
@@ -448,7 +447,7 @@ impl Interpreter {
                             "Error interpreting `{}` at line {}: {}",
                             token.lexeme, token.line, message
                         ),
-                        None => println!("Error interpreting `{}`", message),
+                        None => println!("Error interpreting `{message}`"),
                     };
                     return;
                 }

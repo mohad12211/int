@@ -14,7 +14,7 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn scan_tokens(source: String) -> Vec<Token> {
+    pub fn scan_tokens(source: &str) -> Vec<Token> {
         let mut scanner = Self {
             source: source.chars().collect(),
             tokens: Vec::new(),
@@ -51,30 +51,30 @@ impl Scanner {
             ':' => self.add_token(Colon),
             '!' => {
                 if self.try_consume('=') {
-                    self.add_token(BangEqual)
+                    self.add_token(BangEqual);
                 } else {
-                    self.add_token(Bang)
+                    self.add_token(Bang);
                 }
             }
             '=' => {
                 if self.try_consume('=') {
-                    self.add_token(EqualEqual)
+                    self.add_token(EqualEqual);
                 } else {
-                    self.add_token(Equal)
+                    self.add_token(Equal);
                 }
             }
             '<' => {
                 if self.try_consume('=') {
-                    self.add_token(LessEqual)
+                    self.add_token(LessEqual);
                 } else {
-                    self.add_token(Less)
+                    self.add_token(Less);
                 }
             }
             '>' => {
                 if self.try_consume('=') {
-                    self.add_token(GreaterEqual)
+                    self.add_token(GreaterEqual);
                 } else {
-                    self.add_token(Greater)
+                    self.add_token(Greater);
                 }
             }
             '/' => {
@@ -97,7 +97,7 @@ impl Scanner {
                         exit(1);
                     }
                 } else {
-                    self.add_token(Slash)
+                    self.add_token(Slash);
                 }
             }
             ' ' | '\r' | '\t' => {}
@@ -124,7 +124,7 @@ impl Scanner {
         // TODO: this expect might crash on very large values
         let value =
             f64::from(u32::from_str_radix(&value, 16).expect("Should be valid hexadecimal"));
-        self.add_token(TokenKind::Number(Value::Double(value)))
+        self.add_token(TokenKind::Number(Value::Double(value)));
     }
 
     fn consume_identifer(&mut self) {
@@ -134,7 +134,7 @@ impl Scanner {
         let text = self.source[self.start..self.current]
             .iter()
             .collect::<String>();
-        self.add_token(Self::get_keyword(&text).unwrap_or(TokenKind::Identifier))
+        self.add_token(Self::get_keyword(&text).unwrap_or(TokenKind::Identifier));
     }
 
     fn consume_number_literal(&mut self) {
@@ -161,7 +161,7 @@ impl Scanner {
             .collect::<String>()
             .parse()
             .expect("Should be a valid f64");
-        self.add_token(TokenKind::Number(Value::Double(value)))
+        self.add_token(TokenKind::Number(Value::Double(value)));
     }
 
     fn consume_string_literal(&mut self) {
@@ -181,7 +181,7 @@ impl Scanner {
         let value = self.source[(self.start + 1)..(self.current - 1)]
             .iter()
             .collect();
-        self.add_token(TokenKind::String(Value::new_string(value)))
+        self.add_token(TokenKind::String(Value::new_string(value)));
     }
 
     fn consume(&mut self) -> char {
