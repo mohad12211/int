@@ -36,10 +36,7 @@ impl IntCallable for ArrayLen {
     }
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
-        let array = arguments[0].array().map_err(|message| IntError::Error {
-            message,
-            token: None,
-        })?;
+        let array = arguments[0].array()?;
         Ok(Value::Double(array.borrow().len() as f64))
     }
 }
@@ -55,10 +52,7 @@ impl IntCallable for ArrayWithLen {
     }
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
-        let len = arguments[0].double().map_err(|message| IntError::Error {
-            message,
-            token: None,
-        })? as usize;
+        let len = arguments[0].double()? as usize;
         Ok(Value::Array(Rc::new(RefCell::new(vec![Value::Nil; len]))))
     }
 }

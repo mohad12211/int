@@ -56,3 +56,12 @@ impl<T> WithToken<T> for Result<T, String> {
         })
     }
 }
+
+impl From<String> for IntError {
+    fn from(value: String) -> Self {
+        IntError::Error {
+            message: value,
+            token: None,
+        }
+    }
+}
