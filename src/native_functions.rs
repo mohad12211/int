@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, time::SystemTime};
+use std::time::SystemTime;
 
 use crate::{functions::IntCallable, interpreter::Interpreter, value::Value, IntError};
 
@@ -36,7 +36,7 @@ impl IntCallable for ArrayLen {
     }
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
-        let array = arguments[0].array()?;
+        let array = arguments[0].get_array()?;
         Ok(Value::Double(array.borrow().len() as f64))
     }
 }
@@ -53,6 +53,6 @@ impl IntCallable for ArrayWithLen {
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
         let len = arguments[0].double()? as usize;
-        Ok(Value::Array(Rc::new(RefCell::new(vec![Value::Nil; len]))))
+        Ok(Value::new_array(vec![Value::Nil; len]))
     }
 }

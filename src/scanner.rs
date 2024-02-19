@@ -14,23 +14,21 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn new(source: String) -> Self {
-        Self {
+    pub fn scan_tokens(source: String) -> Vec<Token> {
+        let mut scanner = Self {
             source: source.chars().collect(),
             tokens: Vec::new(),
             start: 0,
             current: 0,
             line: 1,
-        }
-    }
-
-    pub fn scan_tokens(&mut self) {
-        while !self.is_at_end() {
-            self.start = self.current;
-            self.scan_token();
+        };
+        while !scanner.is_at_end() {
+            scanner.start = scanner.current;
+            scanner.scan_token();
         }
 
-        self.tokens.push(Token::eof(self.line));
+        scanner.tokens.push(Token::eof(scanner.line));
+        scanner.tokens
     }
 
     fn scan_token(&mut self) {
@@ -183,7 +181,7 @@ impl Scanner {
         let value = self.source[(self.start + 1)..(self.current - 1)]
             .iter()
             .collect();
-        self.add_token(TokenKind::String(Value::Str(value)))
+        self.add_token(TokenKind::String(Value::new_string(value)))
     }
 
     fn consume(&mut self) -> char {

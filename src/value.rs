@@ -1,40 +1,66 @@
 use ahash::AHashMap as HashMap;
+use std::fmt::Debug;
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
-use crate::functions::Callable;
+use crate::functions::IntCallable;
+
+#[derive(Clone)]
+pub struct Fun(pub Rc<dyn IntCallable>);
+impl PartialEq for Fun {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+impl Debug for Fun {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.name())
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum Object {
+    String(Rc<RefCell<String>>),
+    Struct(Rc<RefCell<HashMap<String, Value>>>),
+    Array(Rc<RefCell<Vec<Value>>>),
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Str(String),
     Double(f64),
     Bool(bool),
     Nil,
-    Fun(Callable),
-    Struct(Rc<RefCell<HashMap<String, Value>>>),
-    Array(Rc<RefCell<Vec<Value>>>),
+    Object(Object),
+    Fun(Fun),
 }
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Str(s) => std::fmt::Display::fmt(&s, f),
             Value::Double(d) => std::fmt::Display::fmt(&d, f),
             Value::Bool(b) => std::fmt::Display::fmt(&b, f),
             Value::Nil => write!(f, "nil"),
-            Value::Fun(fun) => write!(f, "{}", fun.fun.name()),
             // TODO: remove debug print
-            Value::Struct(map) => write!(f, "{:?}", map.borrow()),
-            Value::Array(vec) => write!(f, "{:?}", vec.borrow()),
+            Value::Object(object) => write!(f, "{:?}", object),
+            Value::Fun(fun) => write!(f, "{}", fun.0.name()),
         }
     }
 }
 
 impl Value {
-    pub fn str(self) -> Result<String, String> {
-        match self {
-            Value::Str(str) => Ok(str),
-            _ => Err("Operand must be a String".into()),
-        }
+    pub fn new_fun(fun: impl IntCallable + 'static) -> Value {
+        Value::Fun(Fun(Rc::new(fun)))
+    }
+
+    pub fn new_struct(structure: HashMap<String, Value>) -> Value {
+        Value::Object(Object::Struct(Rc::new(RefCell::new(structure))))
+    }
+
+    pub fn new_string(string: String) -> Value {
+        Value::Object(Object::String(Rc::new(RefCell::new(string))))
+    }
+
+    pub fn new_array(array: Vec<Value>) -> Value {
+        Value::Object(Object::Array(Rc::new(RefCell::new(array))))
     }
 
     pub fn double(&self) -> Result<f64, String> {
@@ -48,24 +74,31 @@ impl Value {
         !matches!(self, Value::Bool(false) | Value::Nil)
     }
 
-    pub fn fun(self) -> Result<Callable, String> {
+    pub fn get_fun(self) -> Result<Fun, String> {
         match self {
             Value::Fun(f) => Ok(f),
             _ => Err("Operand must be a function".into()),
         }
     }
 
-    pub fn structure(&self) -> Result<&RefCell<HashMap<String, Value>>, String> {
+    pub fn get_array(&self) -> Result<&RefCell<Vec<Value>>, String> {
         match self {
-            Value::Struct(map) => Ok(map.as_ref()),
+            Value::Object(Object::Array(array)) => Ok(array),
+            _ => Err("Operand must be an array".into()),
+        }
+    }
+
+    pub fn get_struct(&self) -> Result<&RefCell<HashMap<String, Value>>, String> {
+        match self {
+            Value::Object(Object::Struct(map)) => Ok(map),
             _ => Err("Operand must be a struct".into()),
         }
     }
 
-    pub fn array(&self) -> Result<&RefCell<Vec<Value>>, String> {
+    pub fn get_string(&self) -> Result<&RefCell<String>, String> {
         match self {
-            Value::Array(vec) => Ok(vec.as_ref()),
-            _ => Err("Operand must be an array".into()),
+            Value::Object(Object::String(string)) => Ok(string),
+            _ => Err("Operand must be a string".into()),
         }
     }
 }

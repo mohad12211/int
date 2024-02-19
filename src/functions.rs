@@ -1,23 +1,6 @@
 use crate::{interpreter::Interpreter, statement::Stmt, token::Token, value::Value, IntError};
 use ahash::AHashMap as HashMap;
-use std::{fmt::Debug, rc::Rc};
-
-#[derive(Clone)]
-pub struct Callable {
-    pub fun: Rc<dyn IntCallable>,
-}
-
-impl PartialEq for Callable {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.fun, &other.fun)
-    }
-}
-
-impl Debug for Callable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.fun.name())
-    }
-}
+use std::fmt::Debug;
 
 pub trait IntCallable {
     fn arity(&self) -> usize;

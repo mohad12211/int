@@ -1,10 +1,9 @@
 use ahash::AHashMap as HashMap;
-use std::{cell::RefCell, iter::once, mem, rc::Rc};
+use std::{iter::once, mem};
 
 use crate::{
     environment::Environment,
     expression::Expr,
-    functions::Callable,
     native_functions::{ArrayLen, ArrayWithLen, NativeClock},
     raylib::{
         BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
@@ -13,7 +12,7 @@ use crate::{
     },
     statement::Stmt,
     token::TokenKind,
-    value::Value,
+    value::{Object, Value},
     IntError, WithToken,
 };
 
@@ -25,101 +24,27 @@ pub struct Interpreter {
 impl Default for Interpreter {
     fn default() -> Self {
         let mut globals = HashMap::new();
-        globals.insert(
-            "clock".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(NativeClock),
-            }),
-        );
-        globals.insert(
-            "len".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(ArrayLen),
-            }),
-        );
-        globals.insert(
-            "Array".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(ArrayWithLen),
-            }),
-        );
-        globals.insert(
-            "InitWindow".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(InitWindow),
-            }),
-        );
+        globals.insert("clock".into(), Value::new_fun(NativeClock));
+        globals.insert("len".into(), Value::new_fun(ArrayLen));
+        globals.insert("Array".into(), Value::new_fun(ArrayWithLen));
+        globals.insert("InitWindow".into(), Value::new_fun(InitWindow));
         globals.insert(
             "WindowShouldClose".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(WindowShouldClose),
-            }),
+            Value::new_fun(WindowShouldClose),
         );
-        globals.insert(
-            "BeginDrawing".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(BeginDrawing),
-            }),
-        );
-        globals.insert(
-            "EndDrawing".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(EndDrawing),
-            }),
-        );
-        globals.insert(
-            "ClearBackground".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(ClearBackground),
-            }),
-        );
-        globals.insert(
-            "DrawText".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(DrawText),
-            }),
-        );
-        globals.insert(
-            "SetTargetFPS".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(SetTargetFPS),
-            }),
-        );
-        globals.insert(
-            "DrawRectangle".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(DrawRectangle),
-            }),
-        );
-        globals.insert(
-            "DrawRectangleRec".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(DrawRectangleRec),
-            }),
-        );
-        globals.insert(
-            "GetFrameTime".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(GetFrameTime),
-            }),
-        );
-        globals.insert(
-            "DrawFPS".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(DrawFPS),
-            }),
-        );
-        globals.insert(
-            "IsKeyDown".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(IsKeyDown),
-            }),
-        );
+        globals.insert("BeginDrawing".into(), Value::new_fun(BeginDrawing));
+        globals.insert("EndDrawing".into(), Value::new_fun(EndDrawing));
+        globals.insert("ClearBackground".into(), Value::new_fun(ClearBackground));
+        globals.insert("DrawText".into(), Value::new_fun(DrawText));
+        globals.insert("SetTargetFPS".into(), Value::new_fun(SetTargetFPS));
+        globals.insert("DrawRectangle".into(), Value::new_fun(DrawRectangle));
+        globals.insert("DrawRectangleRec".into(), Value::new_fun(DrawRectangleRec));
+        globals.insert("GetFrameTime".into(), Value::new_fun(GetFrameTime));
+        globals.insert("DrawFPS".into(), Value::new_fun(DrawFPS));
+        globals.insert("IsKeyDown".into(), Value::new_fun(IsKeyDown));
         globals.insert(
             "CheckCollisionRecs".into(),
-            Value::Fun(Callable {
-                fun: Rc::new(CheckCollisionRecs),
-            }),
+            Value::new_fun(CheckCollisionRecs),
         );
         globals.insert(
             "KEY_S".into(),
@@ -180,13 +105,18 @@ impl Interpreter {
                             * right.double().with_token(operator)?,
                     )),
                     TokenKind::Plus => match (left, right) {
-                        (Value::Str(left), Value::Str(right)) => Ok(Value::Str(left + &right)),
-                        (Value::Str(left), Value::Double(right)) => {
-                            Ok(Value::Str(left + &right.to_string()))
-                        }
-                        (Value::Double(left), Value::Str(right)) => {
-                            Ok(Value::Str(left.to_string() + &right))
-                        }
+                        (
+                            Value::Object(Object::String(left)),
+                            Value::Object(Object::String(right)),
+                        ) => Ok(Value::new_string(
+                            left.borrow().clone() + right.borrow().as_ref(),
+                        )),
+                        (Value::Object(Object::String(left)), Value::Double(right)) => Ok(
+                            Value::new_string(left.borrow().clone() + &right.to_string()),
+                        ),
+                        (Value::Double(left), Value::Object(Object::String(right))) => Ok(
+                            Value::new_string(left.to_string() + right.borrow().as_ref()),
+                        ),
                         (Value::Double(left), Value::Double(right)) => {
                             Ok(Value::Double(left + right))
                         }
@@ -257,18 +187,18 @@ impl Interpreter {
                     .map(|arg| self.evalute(arg))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                let fun = callee.fun().with_token(paren)?;
-                if fun.fun.arity() != arguments.len() {
+                let fun = callee.get_fun().with_token(paren)?;
+                if fun.0.arity() != arguments.len() {
                     return Err(IntError::Error {
                         message: format!(
                             "Expected {} arguments, got {}",
                             arguments.len(),
-                            fun.fun.arity()
+                            fun.0.arity()
                         ),
                         token: Some((paren.as_ref()).clone()),
                     });
                 }
-                fun.fun.call(self, arguments)
+                fun.0.call(self, arguments)
             }
             Expr::Ternary {
                 condition,
@@ -287,16 +217,11 @@ impl Interpreter {
                     let value = self.evalute(expr)?;
                     map.insert(token.lexeme.clone(), value);
                 }
-                Ok(Value::Struct(Rc::new(RefCell::new(map))))
+                Ok(Value::new_struct(map))
             }
             Expr::StructGet { target, name } => {
                 let value = self.evalute(target)?;
-                let Value::Struct(map) = value else {
-                    return Err(IntError::Error {
-                        message: "Only structs have fields.".into(),
-                        token: Some((name.as_ref()).clone()),
-                    });
-                };
+                let map = value.get_struct().with_token(name)?;
                 let map = map.borrow();
                 let Some(value) = map.get(&name.as_ref().lexeme) else {
                     return Err(IntError::Error {
@@ -312,12 +237,7 @@ impl Interpreter {
                 value,
             } => {
                 let target = self.evalute(target)?;
-                let Value::Struct(map) = target else {
-                    return Err(IntError::Error {
-                        message: "Only structs have fields.".into(),
-                        token: Some((name.as_ref()).clone()),
-                    });
-                };
+                let map = target.get_struct().with_token(name)?;
                 let value = self.evalute(value)?;
                 map.borrow_mut()
                     .insert(name.as_ref().lexeme.clone(), value.clone());
@@ -329,7 +249,7 @@ impl Interpreter {
                     let value = self.evalute(element)?;
                     vec.push(value);
                 }
-                Ok(Value::Array(Rc::new(RefCell::new(vec))))
+                Ok(Value::new_array(vec))
             }
             Expr::IndexGet {
                 array,
@@ -337,7 +257,7 @@ impl Interpreter {
                 index,
             } => {
                 let array = self.evalute(array)?;
-                let array = array.array().with_token(bracket)?.borrow();
+                let array = array.get_array().with_token(bracket)?.borrow();
                 let index = self.evalute(index)?.double().with_token(bracket)? as usize;
                 let Some(value) = array.get(index) else {
                     return Err(IntError::Error {
@@ -357,7 +277,7 @@ impl Interpreter {
                 value,
             } => {
                 let array = self.evalute(array)?;
-                let mut array = array.array().with_token(bracket)?.borrow_mut();
+                let mut array = array.get_array().with_token(bracket)?.borrow_mut();
                 let index = self.evalute(index)?.double().with_token(bracket)? as usize;
                 let value = self.evalute(value)?;
                 let Some(old_value) = array.get_mut(index) else {
@@ -418,9 +338,7 @@ impl Interpreter {
             Stmt::Function { fun } => {
                 self.environment.define(
                     fun.name.lexeme.clone(),
-                    Value::Fun(Callable {
-                        fun: Rc::new(fun.as_ref().clone()),
-                    }),
+                    Value::new_fun(fun.as_ref().clone()),
                     &mut self.environments,
                 );
                 Ok(())
@@ -462,10 +380,10 @@ impl Interpreter {
                 array,
                 expression,
             } => {
-                let array = self.evalute(array)?;
                 let expression = self.evalute(expression)?;
-                let vec = array.array().with_token(paren)?;
-                vec.borrow_mut().push(expression);
+                let array = self.evalute(array)?;
+                let array = array.get_array().with_token(paren)?;
+                array.borrow_mut().push(expression);
                 Ok(())
             }
             Stmt::Insert {
@@ -476,7 +394,7 @@ impl Interpreter {
             } => {
                 let array = self.evalute(array)?;
                 let expression = self.evalute(expression)?;
-                let mut vec = array.array().with_token(paren)?.borrow_mut();
+                let mut vec = array.get_array().with_token(paren)?.borrow_mut();
                 let index = self.evalute(index)?.double().with_token(paren)? as usize;
                 if index > vec.len() {
                     return Err(IntError::Error {
@@ -496,18 +414,18 @@ impl Interpreter {
                 index,
             } => {
                 let array = self.evalute(array)?;
-                let mut vec = array.array().with_token(paren)?.borrow_mut();
+                let mut array = array.get_array().with_token(paren)?.borrow_mut();
                 let index = self.evalute(index)?.double().with_token(paren)? as usize;
-                if index >= vec.len() {
+                if index >= array.len() {
                     return Err(IntError::Error {
                         message: format!(
                             "index `{index}` is out of bound `{size}`",
-                            size = vec.len()
+                            size = array.len()
                         ),
                         token: Some(paren.as_ref().clone()),
                     });
                 }
-                vec.remove(index);
+                array.remove(index);
                 Ok(())
             }
         }

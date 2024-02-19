@@ -37,23 +37,20 @@ macro_rules! match_token {
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>) -> Self {
-        Self {
+    pub fn parse(tokens: Vec<Token>) -> Option<Vec<Stmt>> {
+        let mut parser = Self {
             tokens,
             statements: Vec::new(),
             current: 0,
-        }
-    }
-
-    pub fn parse(&mut self) -> Result<(), ()> {
-        let mut result = Ok(());
-        while !self.is_at_end() {
-            let statement = self.declaration();
+        };
+        let mut had_error = false;
+        while !parser.is_at_end() {
+            let statement = parser.declaration();
             match statement {
-                Ok(statement) => self.statements.push(statement),
+                Ok(statement) => parser.statements.push(statement),
                 Err(IntError::Error { message, token }) => {
-                    result = Err(());
-                    self.syncronize();
+                    had_error = true;
+                    parser.syncronize();
                     match token {
                         Some(token) => println!(
                             "{message} At token: `{}` at line: {}",
@@ -69,7 +66,11 @@ impl Parser {
                 }
             }
         }
-        result
+        if had_error {
+            None
+        } else {
+            Some(parser.statements)
+        }
     }
 
     fn declaration(&mut self) -> Result<Stmt, IntError> {

@@ -116,6 +116,8 @@ pub enum KeyboardKey {
     KEY_VOLUME_DOWN = 25,
 }
 
+// TODO: capture the error when a struct has as missing field
+
 pub struct InitWindow;
 impl IntCallable for InitWindow {
     fn arity(&self) -> usize {
@@ -134,9 +136,10 @@ impl IntCallable for InitWindow {
         extern "C" {
             fn InitWindow(width: i32, height: i32, title: *const c_char);
         }
-        let width = arguments[0].double().unwrap() as i32;
-        let height = arguments[1].double().unwrap() as i32;
-        let title = CString::new(arguments.get(2).unwrap().clone().str().unwrap()).unwrap();
+        let width = arguments[0].double()? as i32;
+        let height = arguments[1].double()? as i32;
+        let title = CString::new(&**arguments[2].get_string()?.borrow())
+            .expect("You shouldn't be able to construct a string with a nullbyte");
         unsafe {
             InitWindow(width, height, title.as_ptr());
         }
@@ -162,7 +165,7 @@ impl IntCallable for SetTargetFPS {
         extern "C" {
             fn SetTargetFPS(fps: i32);
         }
-        let fps = arguments[0].double().unwrap() as i32;
+        let fps = arguments[0].double()? as i32;
         unsafe {
             SetTargetFPS(fps);
         }
@@ -238,7 +241,7 @@ impl IntCallable for ClearBackground {
         extern "C" {
             fn ClearBackground(color: u32);
         }
-        let color = arguments[0].double().unwrap() as u32;
+        let color = arguments[0].double()? as u32;
         unsafe {
             ClearBackground(color);
         }
@@ -265,11 +268,12 @@ impl IntCallable for DrawText {
             fn DrawText(text: *const c_char, posX: i32, posY: i32, fontSize: i32, color: u32);
         }
         // TODO: I don't need to do that, I can just pass a refernece somehow
-        let text = CString::new(arguments.get(0).unwrap().clone().str().unwrap()).unwrap();
-        let pos_x = arguments[1].double().unwrap() as i32;
-        let pos_y = arguments[2].double().unwrap() as i32;
-        let font_size = arguments[3].double().unwrap() as i32;
-        let color = arguments[4].double().unwrap() as u32;
+        let text = CString::new(&**arguments[0].get_string()?.borrow())
+            .expect("You shouldn't be able to construct a string with a nullbyte");
+        let pos_x = arguments[1].double()? as i32;
+        let pos_y = arguments[2].double()? as i32;
+        let font_size = arguments[3].double()? as i32;
+        let color = arguments[4].double()? as u32;
         unsafe {
             DrawText(text.as_ptr(), pos_x, pos_y, font_size, color);
         }
@@ -319,11 +323,11 @@ impl IntCallable for DrawRectangle {
             fn DrawRectangle(posX: i32, posY: i32, width: i32, height: i32, color: u32) -> bool;
         }
 
-        let pos_x = arguments[0].double().unwrap() as i32;
-        let pos_y = arguments[1].double().unwrap() as i32;
-        let width = arguments[2].double().unwrap() as i32;
-        let height = arguments[3].double().unwrap() as i32;
-        let color = arguments[4].double().unwrap() as u32;
+        let pos_x = arguments[0].double()? as i32;
+        let pos_y = arguments[1].double()? as i32;
+        let width = arguments[2].double()? as i32;
+        let height = arguments[3].double()? as i32;
+        let color = arguments[4].double()? as u32;
         unsafe {
             DrawRectangle(pos_x, pos_y, width, height, color);
         }
@@ -372,8 +376,8 @@ impl IntCallable for DrawFPS {
         extern "C" {
             fn DrawFPS(posX: i32, posY: i32);
         }
-        let pos_x = arguments[0].double().unwrap() as i32;
-        let pos_y = arguments[1].double().unwrap() as i32;
+        let pos_x = arguments[0].double()? as i32;
+        let pos_y = arguments[1].double()? as i32;
         unsafe {
             DrawFPS(pos_x, pos_y);
         }
@@ -399,7 +403,7 @@ impl IntCallable for IsKeyDown {
         extern "C" {
             fn IsKeyDown(key: u32) -> bool;
         }
-        let key = arguments[0].double().unwrap() as u32;
+        let key = arguments[0].double()? as u32;
         let result = unsafe { IsKeyDown(key) };
         Ok(Value::Bool(result))
     }
@@ -430,19 +434,19 @@ impl IntCallable for CheckCollisionRecs {
         extern "C" {
             fn CheckCollisionRecs(rec1: Rectangle, rec2: Rectangle) -> bool;
         }
-        let rec1 = arguments[0].structure().unwrap().borrow();
+        let rec1 = arguments[0].get_struct()?.borrow();
         let rec1 = Rectangle {
-            x: rec1.get("x").unwrap().double().unwrap() as f32,
-            y: rec1["y"].double().unwrap() as f32,
-            width: rec1["width"].double().unwrap() as f32,
-            height: rec1["height"].double().unwrap() as f32,
+            x: rec1["x"].double()? as f32,
+            y: rec1["y"].double()? as f32,
+            width: rec1["width"].double()? as f32,
+            height: rec1["height"].double()? as f32,
         };
-        let rec2 = arguments[1].structure().unwrap().borrow();
+        let rec2 = arguments[1].get_struct()?.borrow();
         let rec2 = Rectangle {
-            x: rec2["x"].double().unwrap() as f32,
-            y: rec2["y"].double().unwrap() as f32,
-            width: rec2["width"].double().unwrap() as f32,
-            height: rec2["height"].double().unwrap() as f32,
+            x: rec2["x"].double()? as f32,
+            y: rec2["y"].double()? as f32,
+            width: rec2["width"].double()? as f32,
+            height: rec2["height"].double()? as f32,
         };
         let result = unsafe { CheckCollisionRecs(rec1, rec2) };
         Ok(Value::Bool(result))
@@ -474,14 +478,14 @@ impl IntCallable for DrawRectangleRec {
         extern "C" {
             fn DrawRectangleRec(rec: Rectangle, color: u32);
         }
-        let rec = arguments[0].structure().unwrap().borrow();
+        let rec = arguments[0].get_struct()?.borrow();
         let rec = Rectangle {
-            x: rec.get("x").unwrap().double().unwrap() as f32,
-            y: rec["y"].double().unwrap() as f32,
-            width: rec["width"].double().unwrap() as f32,
-            height: rec["height"].double().unwrap() as f32,
+            x: rec["x"].double()? as f32,
+            y: rec["y"].double()? as f32,
+            width: rec["width"].double()? as f32,
+            height: rec["height"].double()? as f32,
         };
-        let color = arguments[1].double().unwrap() as u32;
+        let color = arguments[1].double()? as u32;
         unsafe {
             DrawRectangleRec(rec, color);
         };
