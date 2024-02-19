@@ -21,7 +21,13 @@ pub fn main() {
 }
 fn run_file(path: &str) {
     let mut interpreter = Interpreter::default();
-    let source = fs::read_to_string(path).expect("should read file");
+    let source = match fs::read_to_string(path) {
+        Ok(source) => source,
+        Err(err) => {
+            eprintln!("ERROR: Couldn't read file: {err}");
+            return;
+        }
+    };
     run(&source, &mut interpreter);
 }
 
