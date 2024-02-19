@@ -71,3 +71,18 @@ impl IntCallable for DeepClone {
         Ok(arguments[0].deep_clone())
     }
 }
+
+pub struct ToString;
+impl IntCallable for ToString {
+    fn arity(&self) -> usize {
+        1
+    }
+
+    fn name(&self) -> String {
+        String::from("<fun str>")
+    }
+
+    fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
+        Ok(Value::new_string(format!("{value}", value = arguments[0])))
+    }
+}
