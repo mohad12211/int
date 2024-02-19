@@ -1,0 +1,19 @@
+var arr = [1, 2];
+print arr;
+
+append(arr, 3);
+print arr;
+
+arr[0] = 60;
+print arr;
+
+insert(arr[3], 0);
+print arr;
+
+delete(arr[1]);
+print arr;
+
+print len(arr);
+
+var filled_arr = array(10, nil);
+print filled_arr;

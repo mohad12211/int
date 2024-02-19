@@ -26,7 +26,7 @@ impl Default for Interpreter {
         let mut globals = HashMap::new();
         globals.insert("clock".into(), Value::new_fun(NativeClock));
         globals.insert("len".into(), Value::new_fun(ArrayLen));
-        globals.insert("Array".into(), Value::new_fun(ArrayWithLen));
+        globals.insert("array".into(), Value::new_fun(ArrayWithLen));
         globals.insert("clone".into(), Value::new_fun(DeepClone));
         globals.insert("str".into(), Value::new_fun(ToString));
         globals.insert("InitWindow".into(), Value::new_fun(InitWindow));
@@ -194,8 +194,8 @@ impl Interpreter {
                     return Err(IntError::Error {
                         message: format!(
                             "Expected {} arguments, got {}",
-                            arguments.len(),
-                            fun.0.arity()
+                            fun.0.arity(),
+                            arguments.len()
                         ),
                         token: Some((paren.as_ref()).clone()),
                     });

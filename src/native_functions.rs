@@ -44,16 +44,19 @@ impl IntCallable for ArrayLen {
 pub struct ArrayWithLen;
 impl IntCallable for ArrayWithLen {
     fn arity(&self) -> usize {
-        1
+        2
     }
 
     fn name(&self) -> String {
-        String::from("<fun Array>")
+        String::from("<fun array>")
     }
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
         let len = arguments[0].double()? as usize;
-        Ok(Value::new_array(vec![Value::Nil; len]))
+        let value = &arguments[1];
+        Ok(Value::new_array(
+            (0..len).map(|_| value.deep_clone()).collect(),
+        ))
     }
 }
 
