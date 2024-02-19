@@ -54,6 +54,11 @@ generate_enum_and_functions! {
             array: Expr,
             index: Expr,
             expression: Expr,
+        },
+        Delete {
+            paren: Token,
+            array: Expr,
+            index: Expr,
         }
     }
 }

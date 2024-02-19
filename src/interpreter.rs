@@ -490,6 +490,26 @@ impl Interpreter {
                 vec.insert(index, expression);
                 Ok(())
             }
+            Stmt::Delete {
+                paren,
+                array,
+                index,
+            } => {
+                let array = self.evalute(array)?;
+                let mut vec = array.array().with_token(paren)?.borrow_mut();
+                let index = self.evalute(index)?.double().with_token(paren)? as usize;
+                if index >= vec.len() {
+                    return Err(IntError::Error {
+                        message: format!(
+                            "index `{index}` is out of bound `{size}`",
+                            size = vec.len()
+                        ),
+                        token: Some(paren.as_ref().clone()),
+                    });
+                }
+                vec.remove(index);
+                Ok(())
+            }
         }
     }
 

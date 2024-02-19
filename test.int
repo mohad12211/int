@@ -10,8 +10,8 @@ print array;
 insert(array[3], 0);
 print array;
 
-// delete(array[1]);
-// print array;
+delete(array[1]);
+print array;
 
 print len(array);
 

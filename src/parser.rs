@@ -5,8 +5,8 @@ use crate::{
     },
     functions::Function,
     statement::{
-        Append, Block, Break, Continue, Expression, For, Function, If, Insert, Print, Return, Stmt,
-        Var, While,
+        Append, Block, Break, Continue, Delete, Expression, For, Function, If, Insert, Print,
+        Return, Stmt, Var, While,
     },
     token::{Token, TokenKind},
     value::Value,
@@ -158,11 +158,27 @@ impl Parser {
         if self.match_token(TokenKind::Insert) {
             return self.insert_statement();
         }
+        if self.match_token(TokenKind::Delete) {
+            return self.delete_statement();
+        }
         if self.match_token(TokenKind::LeftBrace) {
             return Ok(Block(self.block()?));
         }
 
         self.expression_statement()
+    }
+
+    fn delete_statement(&mut self) -> Result<Stmt, IntError> {
+        let paren = self.consume(TokenKind::LeftParen, "Expected `(` after delete.")?;
+        let Expr::IndexGet { array, index, .. } = self.assignment()? else {
+            return Err(IntError::Error {
+                message: "Invalid delete target.".into(),
+                token: Some(paren.clone()),
+            });
+        };
+        self.consume(TokenKind::RightParen, "Expected `)` after delete.")?;
+        self.consume(TokenKind::Semicolon, "Expected `;` after delete.")?;
+        Ok(Delete(paren, *array, *index))
     }
 
     fn insert_statement(&mut self) -> Result<Stmt, IntError> {

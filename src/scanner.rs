@@ -241,6 +241,7 @@ impl Scanner {
             "continue" => Some(Continue),
             "append" => Some(Append),
             "insert" => Some(Insert),
+            "delete" => Some(Delete),
             _ => None,
         }
     }
