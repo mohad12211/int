@@ -24,6 +24,26 @@ pub enum Object {
     Array(Rc<RefCell<Vec<Value>>>),
 }
 
+impl Object {
+    pub fn deep_clone(&self) -> Object {
+        match self {
+            Object::String(string) => {
+                Object::String(Rc::new(RefCell::new(string.borrow().clone())))
+            }
+            Object::Struct(map) => {
+                let mut map_clone = map.borrow().clone();
+                map_clone.values_mut().for_each(|v| *v = v.deep_clone());
+                Object::Struct(Rc::new(RefCell::new(map_clone)))
+            }
+            Object::Array(array) => {
+                let mut map_array = array.borrow().clone();
+                map_array.iter_mut().for_each(|v| *v = v.deep_clone());
+                Object::Array(Rc::new(RefCell::new(map_array)))
+            }
+        }
+    }
+}
+
 impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -75,6 +95,14 @@ impl Display for Value {
 }
 
 impl Value {
+    pub fn deep_clone(&self) -> Value {
+        let clone = match self {
+            Value::Object(object) => Value::Object(object.deep_clone()),
+            value => value.clone(),
+        };
+        clone
+    }
+
     pub fn new_fun(fun: impl IntCallable + 'static) -> Value {
         Value::Fun(Fun(Rc::new(fun)))
     }

@@ -56,3 +56,18 @@ impl IntCallable for ArrayWithLen {
         Ok(Value::new_array(vec![Value::Nil; len]))
     }
 }
+
+pub struct DeepClone;
+impl IntCallable for DeepClone {
+    fn arity(&self) -> usize {
+        1
+    }
+
+    fn name(&self) -> String {
+        String::from("<fun clone>")
+    }
+
+    fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
+        Ok(arguments[0].deep_clone())
+    }
+}

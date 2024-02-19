@@ -1,0 +1,13 @@
+var array = [0,1];
+var cloned = clone(array);
+
+print array;
+print cloned;
+
+print "append(cloned, 2)";
+append(cloned, 2);
+
+print array;
+print cloned;
+
+
