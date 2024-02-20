@@ -257,43 +257,100 @@ impl Interpreter {
                 array,
                 bracket,
                 index,
-            } => {
-                let array = self.evalute(array)?;
-                let array = array.get_array().with_token(bracket)?.borrow();
-                let index = self.evalute(index)?.double().with_token(bracket)? as usize;
-                let Some(value) = array.get(index) else {
-                    return Err(IntError::Error {
-                        message: format!(
-                            "index `{index}` is out of bound `{size}`",
-                            size = array.len()
-                        ),
-                        token: Some(bracket.as_ref().clone()),
-                    });
-                };
-                Ok(value.clone())
-            }
+            } => match self.evalute(array)? {
+                Value::Object(Object::String(string)) => {
+                    let index = self.evalute(index)?.double().with_token(bracket)? as usize;
+                    let chars: Vec<_> = string.borrow().chars().collect();
+                    Ok(Value::new_string(
+                        chars
+                            .get(index)
+                            .ok_or(IntError::Error {
+                                message: format!(
+                                    "index `{index}` is out of bound `{size}`",
+                                    size = chars.len()
+                                ),
+                                token: Some(bracket.as_ref().clone()),
+                            })?
+                            .to_string(),
+                    ))
+                }
+                Value::Object(Object::Struct(map)) => {
+                    let key = self.evalute(index)?;
+                    let key = key.get_string().with_token(bracket)?.borrow();
+                    Ok(map
+                        .borrow()
+                        .get(key.as_str())
+                        .ok_or(IntError::Error {
+                            message: format!("Undefined field: `{key}`.",),
+                            token: Some((bracket.as_ref()).clone()),
+                        })?
+                        .clone())
+                }
+                Value::Object(Object::Array(array)) => {
+                    let array = array.borrow();
+                    let index = self.evalute(index)?.double().with_token(bracket)? as usize;
+                    match array.get(index) {
+                        Some(value) => Ok(value.clone()),
+                        None => Err(IntError::Error {
+                            message: format!(
+                                "index `{index}` is out of bound `{len}`",
+                                len = array.len()
+                            ),
+                            token: Some(bracket.as_ref().clone()),
+                        }),
+                    }
+                }
+                _ => Err(IntError::Error {
+                    message: "Index operator can only be used on arrays, structs or strings".into(),
+                    token: Some(bracket.as_ref().clone()),
+                }),
+            },
             Expr::IndexSet {
                 array,
                 bracket,
                 index,
                 value,
-            } => {
-                let array = self.evalute(array)?;
-                let mut array = array.get_array().with_token(bracket)?.borrow_mut();
-                let index = self.evalute(index)?.double().with_token(bracket)? as usize;
-                let value = self.evalute(value)?;
-                let Some(old_value) = array.get_mut(index) else {
-                    return Err(IntError::Error {
-                        message: format!(
-                            "index `{index}` is out of bound `{size}`",
-                            size = array.len()
-                        ),
-                        token: Some(bracket.as_ref().clone()),
-                    });
-                };
-                *old_value = value.clone();
-                Ok(value)
-            }
+            } => match self.evalute(array)? {
+                Value::Object(Object::Array(array)) => {
+                    let mut array = array.borrow_mut();
+                    let index = self.evalute(index)?.double().with_token(bracket)? as usize;
+                    let value = self.evalute(value)?;
+                    let Some(old_value) = array.get_mut(index) else {
+                        return Err(IntError::Error {
+                            message: format!(
+                                "index `{index}` is out of bound `{size}`",
+                                size = array.len()
+                            ),
+                            token: Some(bracket.as_ref().clone()),
+                        });
+                    };
+                    *old_value = value.clone();
+                    Ok(value)
+                }
+                Value::Object(Object::String(string)) => {
+                    let index = self.evalute(index)?.double().with_token(bracket)? as usize;
+                    let value = self.evalute(value)?;
+                    let str_value = value.get_string().with_token(bracket)?;
+                    // FIX: will crash if out of range
+                    string.borrow_mut().replace_range(
+                        index..(index + str_value.borrow().len()),
+                        str_value.borrow().as_str(),
+                    );
+                    Ok(value.clone())
+                }
+                Value::Object(Object::Struct(map)) => {
+                    let key = self.evalute(index)?;
+                    let value = self.evalute(value)?;
+                    let key = key.get_string().with_token(bracket)?.borrow();
+                    map.borrow_mut()
+                        .insert(key.as_str().to_string(), value.clone());
+                    Ok(value)
+                }
+                _ => Err(IntError::Error {
+                    message: "Index operator can only be used on arrays, structs or strings".into(),
+                    token: Some(bracket.as_ref().clone()),
+                }),
+            },
         }
     }
 

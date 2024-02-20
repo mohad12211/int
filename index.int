@@ -1,0 +1,19 @@
+var arr = [42];
+var key = 0;
+print arr[key];
+arr[key] = 13;
+print arr[key];
+
+var str = "hello";
+var key = 0;
+print str[key];
+str[key] = "m";
+print str;
+
+var struct = {num: 42};
+var key = "num";
+print struct[key];
+struct[key] = "13";
+print struct[key];
+
+
