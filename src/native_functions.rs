@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use std::{fs, time::SystemTime};
 
 use crate::{functions::IntCallable, interpreter::Interpreter, value::Value, IntError};
 
@@ -87,5 +87,25 @@ impl IntCallable for ToString {
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
         Ok(Value::new_string(format!("{value}", value = arguments[0])))
+    }
+}
+
+pub struct ReadToString;
+impl IntCallable for ReadToString {
+    fn arity(&self) -> usize {
+        1
+    }
+
+    fn name(&self) -> String {
+        String::from("<fun read_to_string>")
+    }
+
+    fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
+        let path = arguments[0].get_string()?;
+        let data = fs::read_to_string(path.borrow().as_str());
+        match data {
+            Ok(data) => Ok(Value::new_string(data)),
+            Err(_) => Ok(Value::Nil),
+        }
     }
 }
