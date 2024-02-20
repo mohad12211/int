@@ -4,7 +4,7 @@ use std::{iter::once, mem};
 use crate::{
     environment::Environment,
     expression::Expr,
-    native_functions::{ArrayWithLen, DeepClone, Len, NativeClock, ReadToString, ToString},
+    native_functions::{ArrayWithLen, DeepClone, Len, NativeClock, ReadToString, ToNum, ToString},
     raylib::{
         BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
         DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow, IsKeyDown, KeyboardKey,
@@ -29,6 +29,7 @@ impl Default for Interpreter {
         globals.insert("array".into(), Value::new_fun(ArrayWithLen));
         globals.insert("clone".into(), Value::new_fun(DeepClone));
         globals.insert("str".into(), Value::new_fun(ToString));
+        globals.insert("num".into(), Value::new_fun(ToNum));
         globals.insert("read_to_string".into(), Value::new_fun(ReadToString));
         globals.insert("InitWindow".into(), Value::new_fun(InitWindow));
         globals.insert(

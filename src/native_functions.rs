@@ -124,3 +124,23 @@ impl IntCallable for ReadToString {
         }
     }
 }
+
+pub struct ToNum;
+impl IntCallable for ToNum {
+    fn arity(&self) -> usize {
+        1
+    }
+
+    fn name(&self) -> String {
+        String::from("<fun num>")
+    }
+
+    fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
+        let str = arguments[0].get_string()?;
+        Ok(str
+            .borrow()
+            .parse::<f64>()
+            .map(|double| Value::Double(double))
+            .unwrap_or(Value::Nil))
+    }
+}
