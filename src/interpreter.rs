@@ -440,10 +440,24 @@ impl Interpreter {
                 expression,
             } => {
                 let expression = self.evalute(expression)?;
-                let array = self.evalute(array)?;
-                let array = array.get_array().with_token(paren)?;
-                array.borrow_mut().push(expression);
-                Ok(())
+                match self.evalute(array)? {
+                    Value::Object(Object::Array(array)) => {
+                        array.borrow_mut().push(expression);
+                        Ok(())
+                    }
+                    Value::Object(Object::String(string)) => {
+                        string
+                            .borrow_mut()
+                            .push_str(expression.get_string()?.borrow().as_str());
+                        Ok(())
+                    }
+                    _ => Err(IntError::Error {
+                        message: "Invalid argument to append".into(),
+                        token: Some(paren.as_ref().clone()),
+                    }),
+                }
+                // let array = array.get_array().with_token(paren)?;
+                // array.borrow_mut().push(expression);
             }
             Stmt::Insert {
                 paren,
