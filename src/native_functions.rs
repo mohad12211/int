@@ -1,6 +1,11 @@
 use std::{fs, time::SystemTime};
 
-use crate::{functions::IntCallable, interpreter::Interpreter, value::Value, IntError};
+use crate::{
+    functions::IntCallable,
+    interpreter::Interpreter,
+    value::{Object, Value},
+    IntError,
+};
 
 pub struct NativeClock;
 
@@ -24,9 +29,9 @@ impl IntCallable for NativeClock {
     }
 }
 
-pub struct ArrayLen;
+pub struct Len;
 
-impl IntCallable for ArrayLen {
+impl IntCallable for Len {
     fn arity(&self) -> usize {
         1
     }
@@ -36,8 +41,18 @@ impl IntCallable for ArrayLen {
     }
 
     fn call(&self, _: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, IntError> {
-        let array = arguments[0].get_array()?;
-        Ok(Value::Double(array.borrow().len() as f64))
+        match &arguments[0] {
+            Value::Object(Object::String(string)) => {
+                Ok(Value::Double(string.borrow().len() as f64))
+            }
+            Value::Object(Object::Array(array)) => Ok(Value::Double(array.borrow().len() as f64)),
+            Value::Object(Object::Struct(map)) => Ok(Value::Double(map.borrow().len() as f64)),
+            _ => Err(IntError::Error {
+                message: "Invalid argument to len".into(),
+                token: None,
+            }),
+        }
+        // Ok(Value::Double(array.borrow().len() as f64))
     }
 }
 

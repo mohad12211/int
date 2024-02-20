@@ -4,7 +4,7 @@ use std::{iter::once, mem};
 use crate::{
     environment::Environment,
     expression::Expr,
-    native_functions::{ArrayLen, ArrayWithLen, DeepClone, NativeClock, ReadToString, ToString},
+    native_functions::{ArrayWithLen, DeepClone, Len, NativeClock, ReadToString, ToString},
     raylib::{
         BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
         DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow, IsKeyDown, KeyboardKey,
@@ -25,7 +25,7 @@ impl Default for Interpreter {
     fn default() -> Self {
         let mut globals = HashMap::new();
         globals.insert("clock".into(), Value::new_fun(NativeClock));
-        globals.insert("len".into(), Value::new_fun(ArrayLen));
+        globals.insert("len".into(), Value::new_fun(Len));
         globals.insert("array".into(), Value::new_fun(ArrayWithLen));
         globals.insert("clone".into(), Value::new_fun(DeepClone));
         globals.insert("str".into(), Value::new_fun(ToString));
