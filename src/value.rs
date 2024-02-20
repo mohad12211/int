@@ -112,7 +112,10 @@ impl Value {
     }
 
     pub fn new_string(string: String) -> Value {
-        Value::Object(Object::String(Rc::new(RefCell::new(string))))
+        Value::Object(Object::String(Rc::new(RefCell::new(
+            // FIX: temp & dumb, do actual unescaping
+            string.replace("\\n", "\n"),
+        ))))
     }
 
     pub fn new_array(array: Vec<Value>) -> Value {
