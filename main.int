@@ -1,0 +1,2 @@
+var text = read_to_string("test.txt");
+print text[1] == "\n";

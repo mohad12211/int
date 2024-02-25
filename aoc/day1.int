@@ -1,0 +1,36 @@
+fun to_lines(str) {
+  var lines = [""];
+  var line = 0;
+
+  for (var i = 0; i < len(str) - 1; i=i+1) {
+    var c = str[i];
+    if (c == "\n") {
+      append(lines, clone(""));
+      line = line + 1;
+    } else {
+      append(lines[line], c);
+    }
+  }
+  return lines;
+}
+
+
+// part 1
+var lines = to_lines(read_to_string("aoc/day1.input"));
+var sum = 0;
+for (var i = 0; i < len(lines); i = i + 1) {
+  sum = sum + num(lines[i]);
+}
+ 
+// part 2
+var sum = 0;
+var freqs = {};
+for (var i = 0; freqs[str(sum)] == nil; i = i + 1) {
+  if (i == len(lines)) {
+    i = 0;
+  }
+  freqs[str(sum)] = true;
+  sum = sum + num(lines[i]);
+}
+
+print sum;
