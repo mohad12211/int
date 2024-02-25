@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 
-use crate::value::Value;
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenKind {
     LeftParen,
     RightParen,
@@ -32,8 +30,8 @@ pub enum TokenKind {
 
     // Literals.
     Identifier,
-    String(Value),
-    Number(Value),
+    String,
+    Number,
 
     // Keywords.
     And,

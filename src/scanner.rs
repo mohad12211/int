@@ -1,9 +1,6 @@
 use std::process::exit;
 
-use crate::{
-    token::{Token, TokenKind},
-    value::Value,
-};
+use crate::token::{Token, TokenKind};
 
 pub struct Scanner {
     source: Vec<char>,
@@ -118,13 +115,7 @@ impl Scanner {
             self.consume();
         }
 
-        let value = self.source[(self.start + 2)..self.current]
-            .iter()
-            .collect::<String>();
-        // TODO: this expect might crash on very large values
-        let value =
-            f64::from(u32::from_str_radix(&value, 16).expect("Should be valid hexadecimal"));
-        self.add_token(TokenKind::Number(Value::Double(value)));
+        self.add_token(TokenKind::Number);
     }
 
     fn consume_identifer(&mut self) {
@@ -156,12 +147,7 @@ impl Scanner {
             }
         }
 
-        let value = self.source[self.start..self.current]
-            .iter()
-            .collect::<String>()
-            .parse()
-            .expect("Should be a valid f64");
-        self.add_token(TokenKind::Number(Value::Double(value)));
+        self.add_token(TokenKind::Number);
     }
 
     fn consume_string_literal(&mut self) {
@@ -178,10 +164,7 @@ impl Scanner {
             exit(1);
         }
 
-        let value = self.source[(self.start + 1)..(self.current - 1)]
-            .iter()
-            .collect();
-        self.add_token(TokenKind::String(Value::new_string(value)));
+        self.add_token(TokenKind::String);
     }
 
     fn consume(&mut self) -> char {

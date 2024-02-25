@@ -475,8 +475,19 @@ impl Parser {
         if self.match_token(TokenKind::Nil) {
             return Ok(Literal(Value::Nil));
         }
-        match_token!(self, if TokenKind::String(val) | TokenKind::Number(val), {
-            return Ok(Literal(val.clone()));
+        match_token!(self, if token TokenKind::String, {
+            let value = &token.lexeme[1..(token.lexeme.len() -1)];
+            return Ok(Literal(Value::new_string(value.to_string())));
+        });
+        match_token!(self, if token TokenKind::Number, {
+            if token.lexeme.starts_with("0x") {
+                // TODO: this expect might crash on very large values
+                let value = f64::from(u32::from_str_radix(&token.lexeme[2..], 16).expect("Should be valid hexadecimal"));
+                return Ok(Literal(Value::Double(value)));
+            } else {
+                let value = token.lexeme.parse().expect("Should be a valid f64");
+                return Ok(Literal(Value::Double(value)));
+            }
         });
         match_token!(self, if var TokenKind::Identifier, {
             return Ok(Variable(var));
