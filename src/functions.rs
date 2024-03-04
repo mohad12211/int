@@ -11,13 +11,13 @@ pub trait IntCallable {
 
 #[derive(Clone, Debug)]
 pub struct Function {
-    pub name: Token,
+    pub name: String,
     params: Vec<Token>,
     body: Vec<Stmt>,
 }
 
 impl Function {
-    pub fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> Self {
+    pub fn new(name: String, params: Vec<Token>, body: Vec<Stmt>) -> Self {
         Self { name, params, body }
     }
 }
@@ -28,7 +28,7 @@ impl IntCallable for Function {
     }
 
     fn name(&self) -> String {
-        format!("<fn {} >", self.name.lexeme)
+        format!("<fn {} >", self.name)
     }
 
     fn call(
@@ -38,7 +38,7 @@ impl IntCallable for Function {
     ) -> Result<Value, IntError> {
         let mut values = HashMap::new();
         for (token, argument) in self.params.clone().into_iter().zip(arguments) {
-            values.insert(token.lexeme, argument);
+            values.insert(interpreter.lexeme(&token).to_string(), argument);
         }
         match interpreter.execute_block(&self.body, &[0], values) {
             Ok(()) => Ok(Value::Nil),

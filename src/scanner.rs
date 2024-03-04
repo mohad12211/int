@@ -3,7 +3,7 @@ use std::process::exit;
 use crate::token::{Token, TokenKind};
 
 pub struct Scanner {
-    source: Vec<char>,
+    pub source: String,
     pub tokens: Vec<Token>,
     start: usize,
     current: usize,
@@ -11,85 +11,86 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn scan_tokens(source: &str) -> Vec<Token> {
-        let mut scanner = Self {
-            source: source.chars().collect(),
+    pub fn new(source: String) -> Self {
+        Self {
+            source,
             tokens: Vec::new(),
             start: 0,
             current: 0,
             line: 1,
-        };
-        while !scanner.is_at_end() {
-            scanner.start = scanner.current;
-            scanner.scan_token();
+        }
+    }
+    pub fn scan(&mut self) {
+        while !self.is_at_end() {
+            self.start = self.current;
+            self.scan_token();
         }
 
-        scanner.tokens.push(Token::eof(scanner.line));
-        scanner.tokens
+        self.tokens.push(Token::eof(self.line));
     }
 
     fn scan_token(&mut self) {
         use TokenKind::*;
         let char = self.consume();
         match char {
-            '[' => self.add_token(LeftBracket),
-            ']' => self.add_token(RightBracket),
-            '(' => self.add_token(LeftParen),
-            ')' => self.add_token(RightParen),
-            '{' => self.add_token(LeftBrace),
-            '}' => self.add_token(RightBrace),
-            ',' => self.add_token(Comma),
-            '.' => self.add_token(Dot),
-            '-' => self.add_token(Minus),
-            '+' => self.add_token(Plus),
-            ';' => self.add_token(Semicolon),
-            '*' => self.add_token(Star),
-            '?' => self.add_token(Question),
-            ':' => self.add_token(Colon),
-            '!' => {
-                if self.try_consume('=') {
+            b'[' => self.add_token(LeftBracket),
+            b']' => self.add_token(RightBracket),
+            b'(' => self.add_token(LeftParen),
+            b')' => self.add_token(RightParen),
+            b'{' => self.add_token(LeftBrace),
+            b'}' => self.add_token(RightBrace),
+            b',' => self.add_token(Comma),
+            b'.' => self.add_token(Dot),
+            b'-' => self.add_token(Minus),
+            b'+' => self.add_token(Plus),
+            b';' => self.add_token(Semicolon),
+            b'*' => self.add_token(Star),
+            b'?' => self.add_token(Question),
+            b':' => self.add_token(Colon),
+            b'!' => {
+                if self.try_consume(b'=') {
                     self.add_token(BangEqual);
                 } else {
                     self.add_token(Bang);
                 }
             }
-            '=' => {
-                if self.try_consume('=') {
+            b'=' => {
+                if self.try_consume(b'=') {
                     self.add_token(EqualEqual);
                 } else {
                     self.add_token(Equal);
                 }
             }
-            '<' => {
-                if self.try_consume('=') {
+            b'<' => {
+                if self.try_consume(b'=') {
                     self.add_token(LessEqual);
                 } else {
                     self.add_token(Less);
                 }
             }
-            '>' => {
-                if self.try_consume('=') {
+            b'>' => {
+                if self.try_consume(b'=') {
                     self.add_token(GreaterEqual);
                 } else {
                     self.add_token(Greater);
                 }
             }
-            '/' => {
-                if self.try_consume('/') {
-                    while self.peek().is_some_and(|c| c != '\n') {
+            b'/' => {
+                if self.try_consume(b'/') {
+                    while self.peek().is_some_and(|c| c != b'\n') {
                         self.consume();
                     }
-                } else if self.try_consume('*') {
-                    while self.peek().is_some_and(|c| c != '*')
-                        || self.peek_next().is_some_and(|c| c != '/')
+                } else if self.try_consume(b'*') {
+                    while self.peek().is_some_and(|c| c != b'*')
+                        || self.peek_next().is_some_and(|c| c != b'/')
                     {
-                        if self.peek() == Some('\n') {
+                        if self.peek() == Some(b'\n') {
                             self.line += 1;
                         }
                         self.consume();
                     }
 
-                    if !self.try_consume('*') || !self.try_consume('/') {
+                    if !self.try_consume(b'*') || !self.try_consume(b'/') {
                         println!("Unterminated block comment at line {}.", self.line);
                         exit(1);
                     }
@@ -97,11 +98,11 @@ impl Scanner {
                     self.add_token(Slash);
                 }
             }
-            ' ' | '\r' | '\t' => {}
-            '\n' => self.line += 1,
-            '"' => self.consume_string_literal(),
+            b' ' | b'\r' | b'\t' => {}
+            b'\n' => self.line += 1,
+            b'"' => self.consume_string_literal(),
             c if c.is_ascii_digit() => self.consume_number_literal(),
-            c if c.is_alphabetic() => self.consume_identifer(),
+            c if c.is_ascii_alphabetic() => self.consume_identifer(),
             _ => {
                 // TODO: better error handling
                 println!("Unexpected Character at line {}", self.line);
@@ -119,17 +120,18 @@ impl Scanner {
     }
 
     fn consume_identifer(&mut self) {
-        while self.peek().is_some_and(|c| c.is_alphanumeric() || c == '_') {
+        while self
+            .peek()
+            .is_some_and(|c| c.is_ascii_alphanumeric() || c == b'_')
+        {
             self.consume();
         }
-        let text = self.source[self.start..self.current]
-            .iter()
-            .collect::<String>();
+        let text = self.source[self.start..self.current].to_string();
         self.add_token(Self::get_keyword(&text).unwrap_or(TokenKind::Identifier));
     }
 
     fn consume_number_literal(&mut self) {
-        if self.peek().is_some_and(|c| c == 'X' || c == 'x') {
+        if self.peek().is_some_and(|c| c == b'X' || c == b'x') {
             self.consume();
             self.consume_hex_literal();
             return;
@@ -138,7 +140,7 @@ impl Scanner {
             self.consume();
         }
 
-        if self.peek() == Some('.') && self.peek_next().is_some_and(|c| c.is_ascii_digit()) {
+        if self.peek() == Some(b'.') && self.peek_next().is_some_and(|c| c.is_ascii_digit()) {
             // consume the `.`
             self.consume();
 
@@ -151,14 +153,14 @@ impl Scanner {
     }
 
     fn consume_string_literal(&mut self) {
-        while self.peek().is_some_and(|c| c != '"') {
-            if self.peek() == Some('\n') {
+        while self.peek().is_some_and(|c| c != b'"') {
+            if self.peek() == Some(b'\n') {
                 self.line += 1;
             }
             self.consume();
         }
 
-        if !self.try_consume('"') {
+        if !self.try_consume(b'"') {
             // TODO: better error handling
             println!("Unterminated String at line {}", self.line);
             exit(1);
@@ -167,21 +169,21 @@ impl Scanner {
         self.add_token(TokenKind::String);
     }
 
-    fn consume(&mut self) -> char {
-        let char = self.source[self.current];
+    fn consume(&mut self) -> u8 {
+        let char = self.source.as_bytes()[self.current];
         self.current += 1;
         char
     }
 
-    fn peek(&self) -> Option<char> {
-        self.source.get(self.current).copied()
+    fn peek(&self) -> Option<u8> {
+        self.source.as_bytes().get(self.current).copied()
     }
 
-    fn peek_next(&self) -> Option<char> {
-        self.source.get(self.current + 1).copied()
+    fn peek_next(&self) -> Option<u8> {
+        self.source.as_bytes().get(self.current + 1).copied()
     }
 
-    fn try_consume(&mut self, expected: char) -> bool {
+    fn try_consume(&mut self, expected: u8) -> bool {
         if self.peek() == Some(expected) {
             self.consume();
             true
@@ -191,8 +193,8 @@ impl Scanner {
     }
 
     fn add_token(&mut self, kind: TokenKind) {
-        let lexeme_text = self.source[self.start..self.current].iter().collect();
-        self.tokens.push(Token::new(kind, lexeme_text, self.line));
+        self.tokens
+            .push(Token::new(kind, (self.start, self.current), self.line));
     }
 
     fn is_at_end(&self) -> bool {

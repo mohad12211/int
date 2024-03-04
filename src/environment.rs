@@ -1,6 +1,6 @@
 use ahash::AHashMap as HashMap;
 
-use crate::{token::Token, value::Value, IntError};
+use crate::value::Value;
 
 #[derive(Debug, Default)]
 pub struct Environment {
@@ -12,39 +12,28 @@ impl Environment {
         Self { ids }
     }
 
-    pub fn get(
-        &self,
-        name: &Token,
-        environments: &mut [HashMap<String, Value>],
-    ) -> Result<Value, IntError> {
+    pub fn get(&self, name: &str, environments: &[HashMap<String, Value>]) -> Option<Value> {
         for &id in self.ids.iter().rev() {
-            if let Some(value) = environments[id].get(&name.lexeme) {
-                return Ok(value.clone());
+            if let Some(value) = environments[id].get(name) {
+                return Some(value.clone());
             }
         }
-
-        Err(IntError::Error {
-            message: format!("Undefined variable `{}`.", name.lexeme),
-            token: Some(name.clone()),
-        })
+        None
     }
 
     pub fn assign(
         &mut self,
-        name: &Token,
+        name: &str,
         value: Value,
         environments: &mut [HashMap<String, Value>],
-    ) -> Result<Value, IntError> {
+    ) -> Option<Value> {
         for &id in self.ids.iter().rev() {
-            if let Some(old_value) = environments[id].get_mut(&name.lexeme) {
+            if let Some(old_value) = environments[id].get_mut(name) {
                 *old_value = value.clone();
-                return Ok(value);
+                return Some(value);
             }
         }
-        Err(IntError::Error {
-            message: format!("Undefined variable `{}`.", name.lexeme),
-            token: Some(name.clone()),
-        })
+        None
     }
 
     pub fn define(

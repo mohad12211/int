@@ -4,6 +4,7 @@ use crate::{
         StructGet, StructSet, Ternary, Unary, Variable,
     },
     functions::Function,
+    scanner::Scanner,
     statement::{
         Append, Block, Break, Continue, Delete, Expression, For, Function, If, Insert, Print,
         Return, Stmt, Var, While,
@@ -13,10 +14,13 @@ use crate::{
     IntError,
 };
 
+#[derive(Default)]
 pub struct Parser {
     tokens: Vec<Token>,
+    pub source: String,
     pub statements: Vec<Stmt>,
     current: usize,
+    had_error: bool,
 }
 
 // like the function match_token, used on patterns that carry data like String or Double.
@@ -37,24 +41,29 @@ macro_rules! match_token {
 }
 
 impl Parser {
-    pub fn parse(tokens: Vec<Token>) -> Option<Vec<Stmt>> {
-        let mut parser = Self {
-            tokens,
+    pub fn new(scanner: Scanner) -> Self {
+        Self {
+            tokens: scanner.tokens,
+            source: scanner.source,
             statements: Vec::new(),
             current: 0,
-        };
-        let mut had_error = false;
-        while !parser.is_at_end() {
-            let statement = parser.declaration();
+            had_error: false,
+        }
+    }
+
+    pub fn parse(&mut self) {
+        while !self.is_at_end() {
+            let statement = self.declaration();
             match statement {
-                Ok(statement) => parser.statements.push(statement),
+                Ok(statement) => self.statements.push(statement),
                 Err(IntError::Error { message, token }) => {
-                    had_error = true;
-                    parser.syncronize();
+                    self.had_error = true;
+                    self.syncronize();
                     match token {
                         Some(token) => println!(
                             "{message} At token: `{}` at line: {}",
-                            token.lexeme, token.line
+                            self.lexeme(&token),
+                            token.line
                         ),
                         None => println!("{message}"),
                     }
@@ -65,11 +74,6 @@ impl Parser {
                     )
                 }
             }
-        }
-        if had_error {
-            None
-        } else {
-            Some(parser.statements)
         }
     }
 
@@ -112,7 +116,11 @@ impl Parser {
         )?;
 
         let body = self.block()?;
-        Ok(Function(Function::new(name, parameters, body)))
+        Ok(Function(Function::new(
+            self.lexeme(&name).to_string(),
+            parameters,
+            body,
+        )))
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, IntError> {
@@ -476,18 +484,19 @@ impl Parser {
             return Ok(Literal(Value::Nil));
         }
         match_token!(self, if token TokenKind::String, {
-            let value = &token.lexeme[1..(token.lexeme.len() -1)];
-            return Ok(Literal(Value::new_string(value.to_string())));
+            let value = self.lexeme(&token);
+            return Ok(Literal(Value::new_string(value[1..value.len()-1].to_string())));
         });
         match_token!(self, if token TokenKind::Number, {
-            if token.lexeme.starts_with("0x") {
+            let lexeme = self.lexeme(&token);
+            return if lexeme.starts_with("0x") {
                 // TODO: this expect might crash on very large values
-                let value = f64::from(u32::from_str_radix(&token.lexeme[2..], 16).expect("Should be valid hexadecimal"));
-                return Ok(Literal(Value::Double(value)));
+                let value = f64::from(u32::from_str_radix(&lexeme[2..], 16).expect("Should be valid hexadecimal"));
+                Ok(Literal(Value::Double(value)))
             } else {
-                let value = token.lexeme.parse().expect("Should be a valid f64");
-                return Ok(Literal(Value::Double(value)));
-            }
+                let value = lexeme.parse().expect("Should be a valid f64");
+                Ok(Literal(Value::Double(value)))
+            };
         });
         match_token!(self, if var TokenKind::Identifier, {
             return Ok(Variable(var));
@@ -616,5 +625,9 @@ impl Parser {
         }
 
         false
+    }
+
+    pub fn lexeme(&self, token: &Token) -> &str {
+        &self.source[token.span.start..token.span.end]
     }
 }

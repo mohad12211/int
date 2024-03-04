@@ -5,13 +5,15 @@ use crate::{
     environment::Environment,
     expression::Expr,
     native_functions::{ArrayWithLen, DeepClone, Len, NativeClock, ReadToString, ToNum, ToString},
+    parser::Parser,
     raylib::{
         BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
         DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow, IsKeyDown, KeyboardKey,
         SetTargetFPS, WindowShouldClose,
     },
+    scanner::Scanner,
     statement::Stmt,
-    token::TokenKind,
+    token::{Token, TokenKind},
     value::{Object, Value},
     IntError, WithToken,
 };
@@ -19,6 +21,7 @@ use crate::{
 pub struct Interpreter {
     environments: Vec<HashMap<String, Value>>,
     environment: Environment,
+    source: String,
 }
 
 impl Default for Interpreter {
@@ -70,6 +73,7 @@ impl Default for Interpreter {
         Self {
             environments: vec![globals],
             environment: Environment::new(vec![0]),
+            source: String::new(),
         }
     }
 }
@@ -153,10 +157,25 @@ impl Interpreter {
             }
             Expr::Grouping { expression } => self.evalute(expression),
             Expr::Literal { value } => Ok(value.as_ref().clone()),
-            Expr::Variable { name } => self.environment.get(name, &mut self.environments),
+            Expr::Variable { name } => {
+                let lexeme = self.lexeme(&name);
+                self.environment
+                    .get(lexeme, &self.environments)
+                    .ok_or(IntError::Error {
+                        message: format!("Undefined variable `{}`.", self.lexeme(&name)),
+                        token: Some(name.as_ref().clone()),
+                    })
+            }
             Expr::Assign { name, expression } => {
                 let value = self.evalute(expression)?;
-                self.environment.assign(name, value, &mut self.environments)
+                // HACK: fucking borrow checker
+                let lexeme = self.lexeme(&name).to_string();
+                self.environment
+                    .assign(&lexeme, value, &mut self.environments)
+                    .ok_or(IntError::Error {
+                        message: format!("Undefined variable `{}`.", self.lexeme(&name)),
+                        token: Some(name.as_ref().clone()),
+                    })
             }
             Expr::Logical {
                 left,
@@ -219,7 +238,7 @@ impl Interpreter {
                 let mut map = HashMap::new();
                 for (token, expr) in fields.as_ref() {
                     let value = self.evalute(expr)?;
-                    map.insert(token.lexeme.clone(), value);
+                    map.insert(self.lexeme(&token).to_string(), value);
                 }
                 Ok(Value::new_struct(map))
             }
@@ -227,12 +246,7 @@ impl Interpreter {
                 let value = self.evalute(target)?;
                 let map = value.get_struct().with_token(name)?;
                 let map = map.borrow();
-                let Some(value) = map.get(&name.as_ref().lexeme) else {
-                    return Err(IntError::Error {
-                        message: format!("Undefined field: `{}`.", name.as_ref().lexeme),
-                        token: Some((name.as_ref()).clone()),
-                    });
-                };
+                let value = map.get(self.lexeme(name)).unwrap_or(&Value::Nil);
                 Ok(value.clone())
             }
             Expr::StructSet {
@@ -244,7 +258,7 @@ impl Interpreter {
                 let map = target.get_struct().with_token(name)?;
                 let value = self.evalute(value)?;
                 map.borrow_mut()
-                    .insert(name.as_ref().lexeme.clone(), value.clone());
+                    .insert(self.lexeme(name).to_string(), value.clone());
                 Ok(value)
             }
             Expr::Array { elements } => {
@@ -282,10 +296,7 @@ impl Interpreter {
                     Ok(map
                         .borrow()
                         .get(key.as_str())
-                        .ok_or(IntError::Error {
-                            message: format!("Undefined field: `{key}`.",),
-                            token: Some((bracket.as_ref()).clone()),
-                        })?
+                        .unwrap_or(&Value::Nil)
                         .clone())
                 }
                 Value::Object(Object::Array(array)) => {
@@ -366,8 +377,11 @@ impl Interpreter {
             Stmt::Expression { expression } => self.evalute(expression).map(|_| {}),
             Stmt::Var { name, initializer } => {
                 let value = self.evalute(initializer)?;
-                self.environment
-                    .define(name.lexeme.clone(), value, &mut self.environments);
+                self.environment.define(
+                    self.lexeme(&name).to_string(),
+                    value,
+                    &mut self.environments,
+                );
                 Ok(())
             }
             Stmt::Block { statements } => {
@@ -398,7 +412,7 @@ impl Interpreter {
             }
             Stmt::Function { fun } => {
                 self.environment.define(
-                    fun.name.lexeme.clone(),
+                    fun.name.clone(),
                     Value::new_fun(fun.as_ref().clone()),
                     &mut self.environments,
                 );
@@ -505,8 +519,15 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, statements: &[Stmt]) {
-        for statement in statements {
+    pub fn interpret(&mut self, source: String) {
+        let mut scanner = Scanner::new(source);
+        scanner.scan();
+        let mut parser = Parser::new(scanner);
+        parser.parse();
+        let statements = parser.statements;
+        self.source = parser.source;
+
+        for statement in &statements {
             match self.execute(statement) {
                 Ok(()) => {}
                 Err(IntError::ReturnValue(_, keyword)) => {
@@ -520,7 +541,9 @@ impl Interpreter {
                     match token {
                         Some(token) => println!(
                             "Error interpreting `{}` at line {}: {}",
-                            token.lexeme, token.line, message
+                            self.lexeme(&token),
+                            token.line,
+                            message
                         ),
                         None => println!("Error interpreting `{message}`"),
                     };
@@ -573,5 +596,9 @@ impl Interpreter {
         mem::swap(&mut environment, &mut self.environment);
         self.environments.pop();
         result
+    }
+
+    pub fn lexeme(&self, token: &Token) -> &str {
+        &self.source[token.span.start..token.span.end]
     }
 }

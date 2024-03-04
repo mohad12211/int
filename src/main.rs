@@ -5,7 +5,7 @@ use std::{
     process::exit,
 };
 
-use int::{interpreter::Interpreter, parser::Parser, scanner::Scanner};
+use int::interpreter::Interpreter;
 
 pub fn main() {
     let args: Vec<String> = env::args().collect();
@@ -28,7 +28,7 @@ fn run_file(path: &str) {
             return;
         }
     };
-    run(&source, &mut interpreter);
+    interpreter.interpret(source);
 }
 
 fn run_prompt() {
@@ -40,14 +40,6 @@ fn run_prompt() {
         let Some(Ok(line)) = iter.next() else {
             break;
         };
-        run(&line, &mut interpreter);
+        interpreter.interpret(line);
     }
-}
-
-fn run(source: &str, interpreter: &mut Interpreter) {
-    let tokens = Scanner::scan_tokens(source);
-    let Some(statements) = Parser::parse(tokens) else {
-        return;
-    };
-    interpreter.interpret(&statements);
 }
