@@ -1,16 +1,19 @@
 var width = 1000;
 var height = 900;
-var ballLen = 25;
+var ballRadius = 15;
 var paddleSpeed = 500;
 
 var paddle1 = {x: 25, y: (height - 100) / 2, width: 25, height: 100 };
 var paddle2 = {x: width - 25 - 25, y: (height - 100) / 2, width: 25, height: 100 };
 
-var ball = {x: width/2, y: height/2, width: ballLen, height: ballLen};
-var ballVel = {x: -400, y: 300};
+var ball = {x: width/2, y: height/2};
+var ballVel = {x: -300, y: 200};
 
 var WHITE = 0xFFFFFFFF;
 var BLACK = 0xFF000000;
+
+var player1Score = 0;
+var player2Score = 0;
 
 InitWindow(width, height, "Hello from int");
 SetTargetFPS(144);
@@ -19,7 +22,7 @@ while (!WindowShouldClose()) {
   ball.x = ball.x + ballVel.x * GetFrameTime();
   var newY = ball.y + ballVel.y * GetFrameTime();
 
-  if (newY > height - ballLen or newY < 0) {
+  if (newY > height - ballRadius or newY < 0) {
     ballVel.y = -ballVel.y;
   } else {
     ball.y = newY;
@@ -41,15 +44,29 @@ while (!WindowShouldClose()) {
     paddle2.y = paddle2.y - paddleSpeed * GetFrameTime();
   }
   
-  if (CheckCollisionRecs(ball, paddle2) or CheckCollisionRecs(ball, paddle1)) {
+  if (CheckCollisionCircleRec(ball, ballRadius, paddle2) or CheckCollisionCircleRec(ball, ballRadius, paddle1)) {
     ballVel.x = -ballVel.x;
+  }
+
+  if (ball.x - ballRadius < 0) {
+    player2Score = player2Score + 1;
+    ball.x = width/2;
+    ball.y = height/2;
+  }
+
+  if (ball.x + ballRadius > width) {
+    player1Score = player1Score + 1;
+    ball.x = width/2;
+    ball.y = height/2;
   }
 
   BeginDrawing();
   ClearBackground(BLACK);
   DrawRectangleRec(paddle1, WHITE);
   DrawRectangleRec(paddle2, WHITE);
-  DrawRectangleRec(ball, WHITE);
+  DrawCircle(ball.x, ball.y, ballRadius, WHITE);
+  DrawText(str(player1Score), 100, 50, 60, WHITE);
+  DrawText(str(player2Score), width - 120, 50, 60, WHITE);
   DrawFPS(5, 5);
   EndDrawing();
 }

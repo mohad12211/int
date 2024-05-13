@@ -7,9 +7,9 @@ use crate::{
     native_functions::{ArrayWithLen, DeepClone, Len, NativeClock, ReadToString, ToNum, ToString},
     parser::Parser,
     raylib::{
-        BeginDrawing, CheckCollisionRecs, ClearBackground, DrawFPS, DrawRectangle,
-        DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow, IsKeyDown, KeyboardKey,
-        SetTargetFPS, WindowShouldClose,
+        BeginDrawing, CheckCollisionCircleRec, CheckCollisionRecs, ClearBackground, DrawCircle,
+        DrawFPS, DrawRectangle, DrawRectangleRec, DrawText, EndDrawing, GetFrameTime, InitWindow,
+        IsKeyDown, KeyboardKey, SetTargetFPS, WindowShouldClose,
     },
     scanner::Scanner,
     statement::Stmt,
@@ -45,6 +45,7 @@ impl Default for Interpreter {
         globals.insert("DrawText".into(), Value::new_fun(DrawText));
         globals.insert("SetTargetFPS".into(), Value::new_fun(SetTargetFPS));
         globals.insert("DrawRectangle".into(), Value::new_fun(DrawRectangle));
+        globals.insert("DrawCircle".into(), Value::new_fun(DrawCircle));
         globals.insert("DrawRectangleRec".into(), Value::new_fun(DrawRectangleRec));
         globals.insert("GetFrameTime".into(), Value::new_fun(GetFrameTime));
         globals.insert("DrawFPS".into(), Value::new_fun(DrawFPS));
@@ -52,6 +53,10 @@ impl Default for Interpreter {
         globals.insert(
             "CheckCollisionRecs".into(),
             Value::new_fun(CheckCollisionRecs),
+        );
+        globals.insert(
+            "CheckCollisionCircleRec".into(),
+            Value::new_fun(CheckCollisionCircleRec),
         );
         globals.insert(
             "KEY_S".into(),

@@ -303,6 +303,38 @@ impl IntCallable for WindowShouldClose {
     }
 }
 
+pub struct DrawCircle;
+impl IntCallable for DrawCircle {
+    fn arity(&self) -> usize {
+        4
+    }
+
+    fn name(&self) -> String {
+        String::from("<fun DrawCircle>")
+    }
+
+    fn call(
+        &self,
+        _: &mut crate::interpreter::Interpreter,
+        arguments: Vec<Value>,
+    ) -> Result<Value, IntError> {
+        extern "C" {
+            fn DrawCircle(centerX: i32, centerY: i32, radius: f32, color: u32) -> bool;
+        }
+
+        let center_x = arguments[0].double()? as i32;
+        let center_y = arguments[1].double()? as i32;
+        let radius = arguments[2].double()? as f32;
+        let color = arguments[3].double()? as u32;
+
+        unsafe {
+            DrawCircle(center_x, center_y, radius, color);
+        }
+
+        Ok(Value::Nil)
+    }
+}
+
 pub struct DrawRectangle;
 impl IntCallable for DrawRectangle {
     fn arity(&self) -> usize {
@@ -404,6 +436,54 @@ impl IntCallable for IsKeyDown {
         }
         let key = arguments[0].double()? as u32;
         let result = unsafe { IsKeyDown(key) };
+        Ok(Value::Bool(result))
+    }
+}
+
+pub struct CheckCollisionCircleRec;
+impl IntCallable for CheckCollisionCircleRec {
+    fn arity(&self) -> usize {
+        3
+    }
+
+    fn name(&self) -> String {
+        String::from("<fun CheckCollisionCircleRec>")
+    }
+
+    fn call(
+        &self,
+        _: &mut crate::interpreter::Interpreter,
+        arguments: Vec<Value>,
+    ) -> Result<Value, IntError> {
+        #[repr(C)]
+        pub struct Rectangle {
+            pub x: f32,
+            pub y: f32,
+            pub width: f32,
+            pub height: f32,
+        }
+        #[repr(C)]
+        pub struct Vector2 {
+            pub x: f32,
+            pub y: f32,
+        }
+        extern "C" {
+            fn CheckCollisionCircleRec(center: Vector2, radius: f32, rec: Rectangle) -> bool;
+        }
+        let center = arguments[0].get_struct()?.borrow();
+        let center = Vector2 {
+            x: center["x"].double()? as f32,
+            y: center["y"].double()? as f32,
+        };
+        let radius = arguments[1].double()? as f32;
+        let rec = arguments[2].get_struct()?.borrow();
+        let rec = Rectangle {
+            x: rec["x"].double()? as f32,
+            y: rec["y"].double()? as f32,
+            width: rec["width"].double()? as f32,
+            height: rec["height"].double()? as f32,
+        };
+        let result = unsafe { CheckCollisionCircleRec(center, radius, rec) };
         Ok(Value::Bool(result))
     }
 }
